@@ -113,8 +113,9 @@ the `adminOnly` tagging after a merge.
 **Why:** upstream's composer squeezed the input on narrow screens, and Enter always sent — so
 phone users couldn't add line breaks (no practical Shift+Enter on a phone).
 **Upstream-merge risk:** *Medium–High.* The composer is actively developed upstream, so this file
-is the most likely to conflict. **Consider upstreaming these as a PR** to eliminate the
-maintenance burden.
+is the most likely to conflict.
+**Upstreamed:** submitted as **[ArnasDon/wacrm#656](https://github.com/ArnasDon/wacrm/pull/656)**.
+If/when it's merged, pull it from upstream and **drop this customization** to remove the drift.
 
 ### E. Secret-leak hardening + ops docs
 **Commits:** `57fcc9e`, `31b7b8f`
