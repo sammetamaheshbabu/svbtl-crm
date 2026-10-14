@@ -39,12 +39,19 @@ export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export const DEFAULT_SECTION: SettingsSection = 'overview';
 
-/** Rail grouping. `adminOnly` items are hidden for non-admins. */
+/**
+ * Rail grouping. `adminOnly` items are hidden from non-admins (agents /
+ * viewers) in the rail AND blocked when deep-linked via `?tab=`. These
+ * carry sensitive workspace config (WhatsApp credentials, API keys,
+ * team management, account-wide fields/deals); agents are telecalling /
+ * chat-support staff who only need the inbox + their own account.
+ */
 export interface SectionMeta {
   id: SettingsSection;
   label: string;
   icon: LucideIcon;
   group: 'top' | 'account' | 'workspace';
+  adminOnly?: boolean;
 }
 
 export const SECTION_META: Record<SettingsSection, SectionMeta> = {
@@ -52,14 +59,19 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   profile: { id: 'profile', label: 'Your profile', icon: User, group: 'account' },
   security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
   appearance: { id: 'appearance', label: 'Appearance', icon: Palette, group: 'account' },
-  whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
+  whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace', adminOnly: true },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
   'quick-replies': { id: 'quick-replies', label: 'Quick replies', icon: Zap, group: 'workspace' },
-  fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace' },
-  deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
-  members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
-  api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace' },
+  fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace', adminOnly: true },
+  deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace', adminOnly: true },
+  members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace', adminOnly: true },
+  api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace', adminOnly: true },
 };
+
+/** True when a section must be hidden from non-admins. */
+export function isAdminOnlySection(section: SettingsSection): boolean {
+  return SECTION_META[section].adminOnly === true;
+}
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [
   { label: null, group: 'top' },

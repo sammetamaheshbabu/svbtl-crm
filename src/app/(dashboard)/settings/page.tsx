@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { useAuth } from '@/hooks/use-auth';
+import { useCan } from '@/hooks/use-can';
 import { useTheme } from '@/hooks/use-theme';
 import { SettingsRail } from '@/components/settings/settings-rail';
 import { SettingsOverview } from '@/components/settings/settings-overview';
@@ -20,6 +21,8 @@ import { MembersTab } from '@/components/settings/members-tab';
 import { ApiKeysSettings } from '@/components/settings/api-keys-settings';
 import {
   resolveSection,
+  isAdminOnlySection,
+  DEFAULT_SECTION,
   type SettingsSection,
 } from '@/components/settings/settings-sections';
 
@@ -50,7 +53,13 @@ function SettingsPageInner() {
   // section — deep-linkable, and it keeps the existing links in the
   // app sidebar/header working. Legacy tab values (tags, custom-fields)
   // resolve onto their new home; unknown/empty → the Overview landing.
-  const section = resolveSection(searchParams.get('tab'));
+  // Admin-only sections are hidden from agents/viewers in the rail; this
+  // also blocks a deep link (?tab=whatsapp) — a non-admin lands on the
+  // Overview instead of the admin panel.
+  const canAdmin = useCan('edit-settings');
+  const requested = resolveSection(searchParams.get('tab'));
+  const section =
+    isAdminOnlySection(requested) && !canAdmin ? DEFAULT_SECTION : requested;
 
   const go = (next: SettingsSection) => {
     const params = new URLSearchParams(searchParams.toString());

@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
+import { useCan } from '@/hooks/use-can';
 import {
   RAIL_GROUPS,
   SECTION_META,
@@ -33,6 +34,10 @@ export function SettingsRail({
 }) {
   const t = useTranslations('Settings');
   const activeRef = useRef<HTMLButtonElement>(null);
+  // Admin-only sections (WhatsApp, API keys, Team members, …) are hidden
+  // from agents/viewers. Writes are already RLS/route-gated; this keeps
+  // sensitive config out of their view entirely.
+  const canAdmin = useCan('edit-settings');
 
   // When horizontal (mobile), keep the active chip in view. On desktop
   // the rail is a static column, so skip.
@@ -57,8 +62,11 @@ export function SettingsRail({
     >
       {RAIL_GROUPS.map(({ label, group }) => {
         const items = SETTINGS_SECTIONS.filter(
-          (s) => SECTION_META[s].group === group,
+          (s) =>
+            SECTION_META[s].group === group &&
+            (canAdmin || !SECTION_META[s].adminOnly),
         );
+        if (items.length === 0) return null;
         return (
           <div
             key={group}
