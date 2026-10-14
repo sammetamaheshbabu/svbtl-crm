@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -45,6 +45,35 @@ function SignupPageInner() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
+
+  // ── Invite-only gate ────────────────────────────────────────
+  // This CRM is private: public self-registration is disabled. A
+  // visitor can only reach the signup form through a valid invite
+  // link (/join/<token> → /signup?invite=<token>). We verify the
+  // token with the public peek endpoint before showing the form.
+  const [inviteStatus, setInviteStatus] = useState<
+    "checking" | "valid" | "invalid"
+  >(inviteToken ? "checking" : "invalid");
+
+  useEffect(() => {
+    if (!inviteToken) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/invitations/${encodeURIComponent(inviteToken)}/peek`,
+          { headers: { accept: "application/json" } },
+        );
+        const data = await res.json().catch(() => ({ ok: false }));
+        if (!cancelled) setInviteStatus(data?.ok ? "valid" : "invalid");
+      } catch {
+        if (!cancelled) setInviteStatus("invalid");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteToken]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +163,49 @@ function SignupPageInner() {
               </Button>
             </Link>
           </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Block the form unless we arrived with a valid invite token.
+  if (inviteStatus !== "valid") {
+    const checking = inviteToken && inviteStatus === "checking";
+    const invalid = Boolean(inviteToken) && inviteStatus === "invalid";
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border-border bg-card">
+          <CardHeader className="items-center text-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <UsersRound className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-xl text-foreground">
+              {checking
+                ? "Checking your invite…"
+                : invalid
+                  ? "Invite not valid"
+                  : "Sign-ups are invite-only"}
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {checking
+                ? "One moment while we verify your invitation."
+                : invalid
+                  ? "This invite link is invalid or has expired. Ask your administrator for a new one."
+                  : "This CRM is private. Ask your administrator to send you an invite link to join."}
+            </CardDescription>
+          </CardHeader>
+          {!checking && (
+            <CardContent>
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  {t("backToSignIn")}
+                </Button>
+              </Link>
+            </CardContent>
+          )}
         </Card>
       </div>
     );

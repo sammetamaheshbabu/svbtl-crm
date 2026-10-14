@@ -163,19 +163,20 @@ function LoginPageInner() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            {t('noAccount')}{" "}
-            <Link
-              href={
-                inviteToken
-                  ? `/signup?invite=${encodeURIComponent(inviteToken)}`
-                  : "/signup"
-              }
-              className="text-primary hover:text-primary/80"
-            >
-              {t('createAccount')}
-            </Link>
-          </p>
+          {/* Invite-only: the public signup link is shown only when the
+              visitor arrived via an invite link. Otherwise this is a
+              private CRM and self-registration is not offered. */}
+          {inviteToken && (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              {t('noAccount')}{" "}
+              <Link
+                href={`/signup?invite=${encodeURIComponent(inviteToken)}`}
+                className="text-primary hover:text-primary/80"
+              >
+                {t('createAccount')}
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

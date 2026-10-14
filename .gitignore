@@ -42,3 +42,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local credentials / secrets (never commit)
+*-credentials.env
+atlas-credentials.env
+
+# supabase cli temp
+supabase/.temp/
