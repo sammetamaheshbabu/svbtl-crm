@@ -51,4 +51,97 @@ describe('serializeMessage', () => {
     const agent = { ...inbound, sender_type: 'agent' } as unknown as Message;
     expect(serializeMessage(agent).direction).toBe('outbound');
   });
+
+  describe('interactive field', () => {
+    const base = {
+      id: 'm2',
+      conversation_id: 'conv1',
+      sender_type: 'agent',
+      content_type: 'interactive',
+      content_text: 'How can we help?',
+      message_id: 'wamid.456',
+      status: 'sent',
+      created_at: '2026-01-01T00:00:00Z',
+    };
+
+    it('projects a button message into kind, body and options', () => {
+      const msg = {
+        ...base,
+        interactive_payload: {
+          kind: 'buttons',
+          body: 'How can we help?',
+          buttons: [
+            { id: 'call', title: 'Arrange a Call Back' },
+            { id: 'demo', title: 'Arrange a Live Demo' },
+          ],
+        },
+      } as unknown as Message;
+
+      expect(serializeMessage(msg).interactive).toEqual({
+        kind: 'buttons',
+        body: 'How can we help?',
+        options: [
+          { id: 'call', title: 'Arrange a Call Back' },
+          { id: 'demo', title: 'Arrange a Live Demo' },
+        ],
+      });
+    });
+
+    it('flattens the rows of every list section into one options array', () => {
+      const msg = {
+        ...base,
+        interactive_payload: {
+          kind: 'list',
+          body: 'Pick a service',
+          button: 'Choose',
+          sections: [
+            { title: 'Web', rows: [{ id: 'site', title: 'Website' }] },
+            {
+              title: 'Apps',
+              rows: [
+                { id: 'ios', title: 'iOS app' },
+                { id: 'android', title: 'Android app' },
+              ],
+            },
+          ],
+        },
+      } as unknown as Message;
+
+      expect(serializeMessage(msg).interactive).toEqual({
+        kind: 'list',
+        body: 'Pick a service',
+        options: [
+          { id: 'site', title: 'Website' },
+          { id: 'ios', title: 'iOS app' },
+          { id: 'android', title: 'Android app' },
+        ],
+      });
+    });
+
+    it('is null for a message that has no interactive payload', () => {
+      const msg = { ...base, content_type: 'text', interactive_payload: null } as unknown as Message;
+      expect(serializeMessage(msg).interactive).toBeNull();
+    });
+
+    it('does not leak the stored payload itself', () => {
+      const msg = {
+        ...base,
+        interactive_payload: { kind: 'buttons', body: 'x', buttons: [{ id: 'a', title: 'A' }] },
+      } as unknown as Message;
+      expect(serializeMessage(msg)).not.toHaveProperty('interactive_payload');
+    });
+
+    it('passes the tapped option id through as interactive_reply_id on a customer reply', () => {
+      const tap = {
+        ...base,
+        sender_type: 'customer',
+        content_type: 'interactive',
+        content_text: 'Arrange a Live Demo',
+        interactive_reply_id: 'demo',
+      } as unknown as Message;
+      const out = serializeMessage(tap);
+      expect(out.direction).toBe('inbound');
+      expect(out.interactive_reply_id).toBe('demo');
+    });
+  });
 });

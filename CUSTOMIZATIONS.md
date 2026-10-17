@@ -142,8 +142,8 @@ If/when it's merged, pull it from upstream and **drop this customization** to re
 **Why:** the SVB mobile app shows the buttons an automated message offered, so agents on the phone
 see the same options as in the web inbox. The web already reads the payload from the database
 directly; the public API did not expose it.
-**Not covered by a test:** the serializer change was type-checked and the existing 40 API tests pass,
-but no test was added for the `interactive` field. Add one to `conversations.test.ts`.
+**Tests:** `conversations.test.ts` covers button messages, list rows flattened into options, a null
+`interactive` for other messages, and the `interactive_reply_id` on a customer's tap.
 **Upstream-merge risk:** *Low–Medium.* The serializer is small. If upstream changes `ApiMessage` or
 `serializeMessage`, keep the new field and its type.
 **Consumer:** the mobile app in the `SVB-CRM-APP` repository reads this field.
