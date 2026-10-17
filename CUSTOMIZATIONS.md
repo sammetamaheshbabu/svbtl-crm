@@ -11,7 +11,7 @@ document records **every change we made on top of upstream and why**, so that:
 | Upstream | `https://github.com/ArnasDon/wacrm` (remote: `upstream`) |
 | This fork | `https://github.com/sammetamaheshbabu/svbtl-crm` (remote: `origin`) |
 | Fork point (merge-base) | `27c6bdf` |
-| Last reviewed | 2026-10-15 — fork is 5 commits ahead, 0 behind |
+| Last reviewed | 2026-10-17 — fork is 9 commits ahead of the fork point `27c6bdf` |
 
 > **Scope.** This file documents **code** changes (tracked in git) plus the **deployment
 > configuration** we rely on (not in git). It intentionally contains **no secrets** — tokens,
@@ -30,7 +30,7 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (10):
+Files we changed vs upstream (11):
 
 ```
 .gitignore
@@ -43,6 +43,7 @@ src/app/layout.tsx
 src/components/inbox/message-composer.tsx
 src/components/settings/settings-rail.tsx
 src/components/settings/settings-sections.ts
+src/lib/api/v1/conversations.ts
 ```
 
 ### A. Branding → "SVBTL CRM"
@@ -128,6 +129,25 @@ If/when it's merged, pull it from upstream and **drop this customization** to re
 **Why:** prevent accidental secret commits; document how to run the deployment safely.
 **Upstream-merge risk:** *None/Low* (additive).
 
+### F. Public API: interactive message options
+**Commits:** `b81c75a` (merged as `70cdd71`, 2026-10-17)
+**File:** `src/lib/api/v1/conversations.ts`
+
+- Each message in `GET /api/v1/conversations/{id}/messages` now has an `interactive` field.
+  For an interactive message it is `{ kind: "buttons" | "list", body, options: [{ id, title }] }`:
+  the buttons, or the rows of a list flattened into one array. For every other message it is `null`.
+- The field is stored as `interactive_payload` in the database; the public API previously dropped it.
+- Existing consumers are not affected: the field is additive.
+
+**Why:** the SVB mobile app shows the buttons an automated message offered, so agents on the phone
+see the same options as in the web inbox. The web already reads the payload from the database
+directly; the public API did not expose it.
+**Not covered by a test:** the serializer change was type-checked and the existing 40 API tests pass,
+but no test was added for the `interactive` field. Add one to `conversations.test.ts`.
+**Upstream-merge risk:** *Low–Medium.* The serializer is small. If upstream changes `ApiMessage` or
+`serializeMessage`, keep the new field and its type.
+**Consumer:** the mobile app in the `SVB-CRM-APP` repository reads this field.
+
 ---
 
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
@@ -174,6 +194,7 @@ After merging, **re-check the medium/high-risk files** from Section 1 — in lik
 2. `src/app/(auth)/signup/page.tsx`, `login/page.tsx` (B).
 3. `src/components/settings/*` and `settings/page.tsx` (C).
 4. `messages/en.json`, `src/app/layout.tsx` (A) — confirm branding strings survived.
+5. `src/lib/api/v1/conversations.ts` (F) — confirm the `interactive` field is still returned.
 
 Then verify:
 
