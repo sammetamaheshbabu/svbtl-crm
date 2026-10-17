@@ -43,7 +43,16 @@ export interface ApiMessage {
   status: string;
   reply_to_message_id: string | null;
   interactive_reply_id: string | null;
+  /** The buttons or list options of an interactive message; null for every other message. */
+  interactive: ApiInteractive | null;
   created_at: string;
+}
+
+/** Public shape of an interactive message's options. A list's rows are flattened into `options`. */
+export interface ApiInteractive {
+  kind: 'buttons' | 'list';
+  body: string;
+  options: { id: string; title: string }[];
 }
 
 /**
@@ -79,6 +88,23 @@ export function serializeConversation(conv: Conversation): ApiConversation {
   };
 }
 
+/** Project a stored interactive payload (buttons or a list) into the public shape. */
+function serializeInteractive(payload: Message['interactive_payload']): ApiInteractive | null {
+  if (!payload) return null;
+  if (payload.kind === 'buttons') {
+    return {
+      kind: 'buttons',
+      body: payload.body,
+      options: payload.buttons.map((b) => ({ id: b.id, title: b.title })),
+    };
+  }
+  return {
+    kind: 'list',
+    body: payload.body,
+    options: payload.sections.flatMap((s) => s.rows.map((r) => ({ id: r.id, title: r.title }))),
+  };
+}
+
 /** Project a `messages` row into the public shape. */
 export function serializeMessage(m: Message): ApiMessage {
   return {
@@ -95,6 +121,7 @@ export function serializeMessage(m: Message): ApiMessage {
     status: m.status,
     reply_to_message_id: m.reply_to_message_id ?? null,
     interactive_reply_id: m.interactive_reply_id ?? null,
+    interactive: serializeInteractive(m.interactive_payload),
     created_at: m.created_at,
   };
 }
