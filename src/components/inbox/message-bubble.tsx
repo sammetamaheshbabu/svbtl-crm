@@ -295,6 +295,16 @@ export function MessageBubble({
             : "rounded-bl-md bg-muted text-foreground",
         )}
       >
+        {/* Who on the team sent it — so a shared inbox shows which agent
+            replied, the way a WhatsApp group names each sender. */}
+        {isAgent && senderName && (
+          <p
+            className="mb-0.5 max-w-60 truncate text-xs font-semibold text-primary-foreground/90"
+            title={senderName}
+          >
+            {senderName}
+          </p>
+        )}
         {reply && (
           <ReplyQuote
             authorLabel={reply.authorLabel}
@@ -314,13 +324,6 @@ export function MessageBubble({
             isAgent ? "justify-end" : "justify-start",
           )}
         >
-          {/* Who on the team sent it — so a shared inbox shows which
-              agent replied. Same muted style as the timestamp. */}
-          {isAgent && senderName && (
-            <span className="max-w-32 truncate text-[10px] text-primary-foreground/70" title={senderName}>
-              {senderName} ·
-            </span>
-          )}
           {/* AI badge — only on replies the auto-reply bot generated
               (always outbound, so it sits on the primary fill). Lets
               agents tell an AI reply from their own / a Flow's at a

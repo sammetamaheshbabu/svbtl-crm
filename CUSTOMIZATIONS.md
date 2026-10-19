@@ -161,7 +161,7 @@ directly; the public API did not expose it.
   account (checked in `profiles`); anything else is a 400 that names `sender_user_id`.
 - `GET /api/v1/conversations/{id}/messages` adds `sender_name` to each message: the team member's
   `full_name` for our own messages, otherwise `null`. The id itself is not exposed.
-- The inbox bubble shows the sender's name before the time on our messages.
+- The inbox bubble names the sender on a line at the top of our messages, like a WhatsApp group.
 
 **Why:** replies sent from the SVB mobile app went through the shared API key, so the inbox could
 not tell which team member replied.
