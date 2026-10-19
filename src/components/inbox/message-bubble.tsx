@@ -38,6 +38,12 @@ interface MessageBubbleProps {
    * stays inline and non-clickable.
    */
   onOpenMedia?: (messageId: string) => void;
+  /**
+   * Name of the team member who sent this message (from `sender_id`), shown in
+   * the footer of our own bubbles. Omitted for customers, bots, and messages
+   * with no sender recorded.
+   */
+  senderName?: string | null;
 }
 
 /**
@@ -264,6 +270,7 @@ export function MessageBubble({
   currentUserId,
   onToggleReaction,
   onOpenMedia,
+  senderName,
 }: MessageBubbleProps) {
   const t = useTranslations("Inbox.bubble");
 
@@ -307,6 +314,13 @@ export function MessageBubble({
             isAgent ? "justify-end" : "justify-start",
           )}
         >
+          {/* Who on the team sent it — so a shared inbox shows which
+              agent replied. Same muted style as the timestamp. */}
+          {isAgent && senderName && (
+            <span className="max-w-32 truncate text-[10px] text-primary-foreground/70" title={senderName}>
+              {senderName} ·
+            </span>
+          )}
           {/* AI badge — only on replies the auto-reply bot generated
               (always outbound, so it sits on the primary fill). Lets
               agents tell an AI reply from their own / a Flow's at a

@@ -168,6 +168,8 @@ export async function POST(request: Request) {
         templateMessageParams: template_message_params,
         interactivePayload: interactive_payload,
         replyToMessageId: reply_to_message_id,
+        // Who replied, so the inbox can show the sender's name
+        senderId: userId,
       })
 
       return NextResponse.json({

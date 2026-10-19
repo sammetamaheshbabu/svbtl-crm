@@ -148,6 +148,28 @@ directly; the public API did not expose it.
 `serializeMessage`, keep the new field and its type.
 **Consumer:** the mobile app in the `SVB-CRM-APP` repository reads this field.
 
+### G. Who sent each reply (sender names)
+**Branch:** `message-sender` (2026-10-19)
+**Files:** `src/lib/whatsapp/send-message.ts`, `src/app/api/whatsapp/send/route.ts`,
+`src/app/api/v1/messages/route.ts`, `src/lib/api/v1/sender.ts`, `src/lib/api/v1/conversations.ts`,
+`src/app/api/v1/conversations/[id]/messages/route.ts`, `src/components/inbox/message-bubble.tsx`,
+`src/components/inbox/message-thread.tsx`
+
+- Sends from the web inbox now record the signed-in agent in `messages.sender_id` (the column existed
+  but nothing set it).
+- `POST /api/v1/messages` accepts an optional `sender_user_id`. It must be a member of the key's
+  account (checked in `profiles`); anything else is a 400 that names `sender_user_id`.
+- `GET /api/v1/conversations/{id}/messages` adds `sender_name` to each message: the team member's
+  `full_name` for our own messages, otherwise `null`. The id itself is not exposed.
+- The inbox bubble shows the sender's name before the time on our messages.
+
+**Why:** replies sent from the SVB mobile app went through the shared API key, so the inbox could
+not tell which team member replied.
+**Tests:** `sender.test.ts` (validation and name lookup) and `conversations.test.ts` (`sender_name`).
+**Upstream-merge risk:** *Medium.* Touches the shared send path and the bubble footer. If upstream
+changes `sendMessage`, keep passing `senderId` through to the insert.
+**Consumer:** the mobile app's backend sends `sender_user_id`; the app shows `sender_name`.
+
 ---
 
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
