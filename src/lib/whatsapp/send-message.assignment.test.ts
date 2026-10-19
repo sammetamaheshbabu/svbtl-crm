@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+vi.mock('@/lib/webhooks/deliver', () => ({ dispatchWebhookEvent: vi.fn(async () => {}) }));
+vi.mock('@/lib/flows/admin-client', () => ({
+  supabaseAdmin: () => ({
+    from: () => {
+      const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data: null }) };
+      return q;
+    },
+  }),
+}));
+
 import {
   claimConversation,
   isAgentSender,
@@ -86,31 +96,27 @@ describe('who may send into a chat', () => {
 });
 
 describe('claimConversation', () => {
-  function claimDb(rows: Array<{ id: string }>, error: { message: string } | null = null) {
-    const calls: Array<[string, ...unknown[]]> = [];
-    const q = {
-      update: (v: unknown) => (calls.push(['update', v]), q),
-      eq: (c: string, v: unknown) => (calls.push(['eq', c, v]), q),
-      is: (c: string, v: unknown) => (calls.push(['is', c, v]), q),
-      select: async () => ({ data: error ? null : rows, error }),
-    };
-    return { db: { from: () => q } as unknown as SupabaseClient, calls };
+  function claimDb(result: { changed: boolean } | null, error: { message: string } | null = null) {
+    const rpc = vi.fn(async () => ({ data: error ? null : { ...result, from_agent_id: null }, error }));
+    return { db: { rpc } as unknown as SupabaseClient, rpc };
   }
 
-  it('assigns only a chat that is still unassigned', async () => {
-    const { db, calls } = claimDb([{ id: 'cv-1' }]);
-    expect(await claimConversation(db, 'cv-1', ANN)).toBe(true);
-    expect(calls).toEqual([
-      ['update', { assigned_agent_id: ANN }],
-      ['eq', 'id', 'cv-1'],
-      ['is', 'assigned_agent_id', null],
-    ]);
+  it('assigns only a chat that is still unassigned, naming the agent as the one who took it', async () => {
+    const { db, rpc } = claimDb({ changed: true });
+    expect(await claimConversation(db, 'acct-1', 'cv-1', ANN)).toBe(true);
+    expect(rpc).toHaveBeenCalledWith('assign_conversation', {
+      p_account_id: 'acct-1',
+      p_conversation_id: 'cv-1',
+      p_agent_id: ANN,
+      p_actor_id: ANN,
+      p_only_if_unassigned: true,
+    });
   });
 
   it('reports no claim when someone else took the chat first, or on error', async () => {
-    expect(await claimConversation(claimDb([]).db, 'cv-1', ANN)).toBe(false);
+    expect(await claimConversation(claimDb({ changed: false }).db, 'acct-1', 'cv-1', ANN)).toBe(false);
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(await claimConversation(claimDb([], { message: 'boom' }).db, 'cv-1', ANN)).toBe(false);
+    expect(await claimConversation(claimDb(null, { message: 'boom' }).db, 'acct-1', 'cv-1', ANN)).toBe(false);
     errSpy.mockRestore();
   });
 });

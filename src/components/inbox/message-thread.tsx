@@ -27,7 +27,13 @@ import {
   RefreshCw,
   PanelRightOpen,
   PanelRightClose,
+  CircleUserRound,
 } from "lucide-react";
+import {
+  describeAssignment,
+  placeAssignments,
+  type AssignmentEvent,
+} from "@/lib/inbox/assignment-events";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -168,6 +174,7 @@ export function MessageThread({
   const t = useTranslations("Inbox.messageThread");
   const tTimer = useTranslations("Inbox.sessionTimer");
   const tQuote = useTranslations("Inbox.replyQuote");
+  const tHandoff = useTranslations("Inbox.handoff");
 
   const { user } = useAuth();
   const { getPresence, getRow, now } = usePresence();
@@ -181,6 +188,8 @@ export function MessageThread({
     [profiles],
   );
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
+  // Who handed this chat to whom, shown between the messages
+  const [assignments, setAssignments] = useState<AssignmentEvent[]>([]);
   // Purely visual spin state for the manual-refresh button. The actual
   // refetch is fire-and-forget through `onRefresh` (which bumps the
   // parent's resyncToken); the 700ms spin is just feedback so the click
@@ -236,6 +245,33 @@ export function MessageThread({
       cancelled = true;
     };
   }, []);
+
+  const handoffConversationId = conversation?.id ?? null;
+  const handoffAssignee = conversation?.assigned_agent_id ?? null;
+  useEffect(() => {
+    if (!handoffConversationId) {
+      setAssignments([]);
+      return;
+    }
+    let cancelled = false;
+    const supabase = createClient();
+    supabase
+      .from("conversation_assignments")
+      .select("id, from_agent_id, to_agent_id, actor_user_id, created_at")
+      .eq("conversation_id", handoffConversationId)
+      .order("created_at", { ascending: true })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("Failed to fetch assignment history:", error.message);
+          return;
+        }
+        setAssignments((data as AssignmentEvent[]) ?? []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [handoffConversationId, handoffAssignee]);
 
   // 24-hour session timer
   const sessionInfo = useMemo(() => {
@@ -865,14 +901,17 @@ export function MessageThread({
     async (agentId: string | null) => {
       if (!conversation) return;
 
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("conversations")
-        .update({ assigned_agent_id: agentId })
-        .eq("id", conversation.id);
+      // Through the server so the handoff is recorded and the new owner
+      // is alerted (conversation.assigned webhook).
+      const res = await fetch(`/api/conversations/${conversation.id}/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      }).catch(() => null);
 
-      if (error) {
-        console.error("Failed to update assignment:", error);
+      if (!res?.ok) {
+        const payload = await res?.json().catch(() => null);
+        console.error("Failed to update assignment:", payload?.error ?? res?.status);
         toast.error(t("assignmentUpdateFailed"));
         return;
       }
@@ -903,6 +942,24 @@ export function MessageThread({
 
   const displayName = contact.name || contactHandle(contact);
   const messageGroups = groupMessagesByDate(messages);
+  const placedAssignments = placeAssignments(messages, assignments);
+  const renderHandoff = (event: AssignmentEvent) => {
+    const text = describeAssignment(
+      event,
+      (id) => nameByUserId.get(id) || tHandoff("someone"),
+    );
+    return (
+      <div key={`handoff-${event.id}`} className="flex justify-center py-1">
+        <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-[11px] text-muted-foreground">
+          <CircleUserRound className="h-3 w-3 shrink-0" />
+          <span className="truncate">{tHandoff(text.key, text.values)}</span>
+          <span className="shrink-0 opacity-70">
+            · {format(new Date(event.created_at), "HH:mm")}
+          </span>
+        </span>
+      </div>
+    );
+  };
   const currentStatus = STATUS_OPTIONS.find(
     (s) => s.value === conversation.status
   );
@@ -1118,7 +1175,7 @@ export function MessageThread({
           </div>
         ) : (
           <div className="space-y-4">
-            {messageGroups.map((group) => (
+            {messageGroups.map((group, groupIndex) => (
               <div key={group.date}>
                 {/* Date separator */}
                 <div className="mb-4 flex items-center justify-center">
@@ -1128,6 +1185,7 @@ export function MessageThread({
                 </div>
                 {/* Messages */}
                 <div className="space-y-2">
+                  {groupIndex === 0 && placedAssignments.leading.map(renderHandoff)}
                   {group.messages.map((msg) => {
                     const parent = msg.reply_to_message_id
                       ? messagesById.get(msg.reply_to_message_id)
@@ -1153,9 +1211,10 @@ export function MessageThread({
                       const next = own?.emoji === emoji ? "" : emoji;
                       void postReaction(msg.id, next);
                     };
+                    const handoffs = placedAssignments.afterMessage.get(msg.id) ?? [];
                     return (
+                      <div key={msg.id} className="space-y-2">
                       <MessageActions
-                        key={msg.id}
                         message={msg}
                         onReply={() => handleStartReply(msg)}
                         onReact={(emoji) => {
@@ -1172,6 +1231,8 @@ export function MessageThread({
                           senderName={msg.sender_id ? nameByUserId.get(msg.sender_id) : null}
                         />
                       </MessageActions>
+                      {handoffs.map(renderHandoff)}
+                      </div>
                     );
                   })}
                 </div>

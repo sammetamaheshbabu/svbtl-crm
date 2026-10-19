@@ -157,6 +157,15 @@
     }
   },
   "Inbox": {
+    "handoff": {
+      "someone": "Um membro da equipe",
+      "took": "{to} assumiu esta conversa",
+      "handedOver": "{actor} passou esta conversa para {to}",
+      "assigned": "{actor} atribuiu esta conversa a {to}",
+      "assignedAuto": "Atribuída a {to} automaticamente",
+      "unassigned": "{actor} removeu a atribuição desta conversa",
+      "unassignedAuto": "Conversa sem atribuição"
+    },
     "page": {
       "whatsappNotConnected": "O WhatsApp® não está conectado. Vá em Configurações para conectar sua conta."
     },
@@ -2530,6 +2539,7 @@
       "internalServerError": "Erro interno do servidor",
       "profileNotLinked": "Seu perfil não está vinculado a uma conta.",
       "conversationNotFound": "Conversa não encontrada",
+      "assigneeNotMember": "Essa pessoa não faz parte desta equipe.",
       "failedToLoadConversation": "Falha ao carregar a conversa",
       "whatsappNotConfigured": "WhatsApp não configurado",
       "whatsappNotConfiguredDot": "WhatsApp não configurado.",

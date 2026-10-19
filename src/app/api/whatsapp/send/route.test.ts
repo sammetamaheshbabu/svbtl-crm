@@ -123,6 +123,8 @@ function makeSupabaseMock() {
       })),
     },
     from: vi.fn((table: string) => builder(table)),
+    // assign_conversation (claim on reply): the chat was unassigned
+    rpc: vi.fn(async () => ({ data: { changed: true, from_agent_id: null, contact_id: 'contact-1' }, error: null })),
   }
 }
 
