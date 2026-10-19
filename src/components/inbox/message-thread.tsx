@@ -175,6 +175,11 @@ export function MessageThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  // Team members' names by auth user id, for the sender label on our bubbles
+  const nameByUserId = useMemo(
+    () => new Map(profiles.map((p) => [p.user_id, p.full_name])),
+    [profiles],
+  );
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   // Purely visual spin state for the manual-refresh button. The actual
   // refetch is fire-and-forget through `onRefresh` (which bumps the
@@ -1149,6 +1154,7 @@ export function MessageThread({
                           currentUserId={user?.id}
                           onToggleReaction={handlePillToggle}
                           onOpenMedia={handleMediaChange}
+                          senderName={msg.sender_id ? nameByUserId.get(msg.sender_id) : null}
                         />
                       </MessageActions>
                     );

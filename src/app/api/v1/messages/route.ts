@@ -23,6 +23,7 @@
 //       "params": ["A123"] | { "body": [...] }   // array = positional body; object = structured
 //     },
 //     "reply_to_message_id": "<uuid>",       // optional, must be in the same conversation
+//     "sender_user_id": "<uuid>",            // optional, the team member sending; must be in this account
 //     "name": "Jane Doe"                     // optional, names a newly-created contact
 //   }
 //
@@ -40,6 +41,7 @@ import {
   SendMessageError,
 } from '@/lib/whatsapp/send-message';
 import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive';
+import { resolveSenderId } from '@/lib/api/v1/sender';
 
 export async function POST(request: Request) {
   try {
@@ -95,6 +97,10 @@ export async function POST(request: Request) {
       interactivePayload,
     });
 
+    // Checked before the conversation is resolved, so a bad sender 400s
+    // without creating anything.
+    const senderId = await resolveSenderId(ctx.supabase, ctx.accountId, body.sender_user_id);
+
     // Find-or-create the conversation for this phone, then send. Both
     // steps share `SendMessageError`, so one catch maps the whole
     // pipeline to the envelope.
@@ -124,6 +130,7 @@ export async function POST(request: Request) {
           typeof body.reply_to_message_id === 'string'
             ? body.reply_to_message_id
             : null,
+        senderId,
       }
     );
 

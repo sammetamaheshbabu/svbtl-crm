@@ -145,3 +145,28 @@ describe('serializeMessage', () => {
     });
   });
 });
+
+describe('serializeMessage sender_name', () => {
+  const base = {
+    id: 'm9',
+    conversation_id: 'conv1',
+    content_type: 'text',
+    content_text: 'On my way',
+    status: 'sent',
+    created_at: '2026-01-01T00:00:00Z',
+  };
+  const names = new Map([['u-ann', 'Ann Agent']]);
+
+  it('names the team member who sent our message', () => {
+    const msg = { ...base, sender_type: 'agent', sender_id: 'u-ann' } as unknown as Message;
+    expect(serializeMessage(msg, names).sender_name).toBe('Ann Agent');
+    expect(serializeMessage(msg, names)).not.toHaveProperty('sender_id');
+  });
+
+  it('is null for customers, unknown senders and sends with no person recorded', () => {
+    expect(serializeMessage({ ...base, sender_type: 'customer', sender_id: 'u-ann' } as unknown as Message, names).sender_name).toBeNull();
+    expect(serializeMessage({ ...base, sender_type: 'agent', sender_id: 'u-gone' } as unknown as Message, names).sender_name).toBeNull();
+    expect(serializeMessage({ ...base, sender_type: 'agent' } as unknown as Message, names).sender_name).toBeNull();
+    expect(serializeMessage({ ...base, sender_type: 'agent', sender_id: 'u-ann' } as unknown as Message).sender_name).toBeNull();
+  });
+});

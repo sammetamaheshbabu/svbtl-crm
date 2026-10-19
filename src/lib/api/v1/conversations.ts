@@ -45,6 +45,11 @@ export interface ApiMessage {
   interactive_reply_id: string | null;
   /** The buttons or list options of an interactive message; null for every other message. */
   interactive: ApiInteractive | null;
+  /**
+   * Name of the team member who sent this message, or null (customer messages, bots,
+   * and sends with no person recorded). The internal `sender_id` itself stays private.
+   */
+  sender_name: string | null;
   created_at: string;
 }
 
@@ -106,7 +111,11 @@ function serializeInteractive(payload: Message['interactive_payload']): ApiInter
 }
 
 /** Project a `messages` row into the public shape. */
-export function serializeMessage(m: Message): ApiMessage {
+export function serializeMessage(
+  m: Message,
+  /** Team members' names by auth user id, from `senderNames`. */
+  names: ReadonlyMap<string, string> = new Map()
+): ApiMessage {
   return {
     id: m.id,
     conversation_id: m.conversation_id,
@@ -122,6 +131,7 @@ export function serializeMessage(m: Message): ApiMessage {
     reply_to_message_id: m.reply_to_message_id ?? null,
     interactive_reply_id: m.interactive_reply_id ?? null,
     interactive: serializeInteractive(m.interactive_payload),
+    sender_name: m.sender_type !== 'customer' && m.sender_id ? (names.get(m.sender_id) ?? null) : null,
     created_at: m.created_at,
   };
 }
