@@ -469,6 +469,17 @@ export function MessageThread({
     }
   }, [messages]);
 
+  // An agent's reply to an unassigned chat assigns it to them (claim on
+  // reply); reflect that at once instead of waiting for a refresh.
+  const noteClaim = useCallback(
+    (payload: { claimed?: boolean } | null | undefined) => {
+      if (payload?.claimed && conversation && user?.id) {
+        onAssignChange(conversation.id, user.id);
+      }
+    },
+    [conversation, onAssignChange, user?.id],
+  );
+
   const handleSend = useCallback(
     async (text: string, replyToId?: string) => {
       if (!conversation) return;
@@ -516,6 +527,7 @@ export function MessageThread({
         // with the real DB row. If realtime hasn't arrived yet, at least
         // flip status to 'sent' so the UI stops showing "sending".
         onUpdateMessage(tempId, { status: "sent" });
+        noteClaim(payload);
       } catch (err) {
         console.error("Failed to send message:", err);
         const reason = err instanceof Error ? err.message : t("networkError");
@@ -523,7 +535,7 @@ export function MessageThread({
         onUpdateMessage(tempId, { status: "failed" });
       }
     },
-    [conversation, onNewMessage, onUpdateMessage, t]
+    [conversation, onNewMessage, onUpdateMessage, noteClaim, t]
   );
 
   const handleSendMedia = useCallback(
@@ -581,6 +593,7 @@ export function MessageThread({
         }
 
         onUpdateMessage(tempId, { status: "sent" });
+        noteClaim(data);
       } catch (err) {
         console.error("Failed to send media:", err);
         const reason = err instanceof Error ? err.message : t("networkError");
@@ -589,7 +602,7 @@ export function MessageThread({
         void deleteAccountMedia(CHAT_MEDIA_BUCKET, payload.path).catch(() => {});
       }
     },
-    [conversation, onNewMessage, onUpdateMessage, t],
+    [conversation, onNewMessage, onUpdateMessage, noteClaim, t],
   );
 
   const handleSendInteractive = useCallback(
@@ -635,6 +648,7 @@ export function MessageThread({
         }
 
         onUpdateMessage(tempId, { status: "sent" });
+        noteClaim(data);
       } catch (err) {
         console.error("Failed to send interactive message:", err);
         const reason = err instanceof Error ? err.message : t("networkError");
@@ -642,7 +656,7 @@ export function MessageThread({
         onUpdateMessage(tempId, { status: "failed" });
       }
     },
-    [conversation, onNewMessage, onUpdateMessage, t],
+    [conversation, onNewMessage, onUpdateMessage, noteClaim, t],
   );
 
   const handleStatusChange = useCallback(
@@ -724,6 +738,7 @@ export function MessageThread({
         }
 
         onUpdateMessage(tempId, { status: "sent" });
+        noteClaim(payload);
       } catch (err) {
         console.error("Failed to send template:", err);
         const reason = err instanceof Error ? err.message : t("networkError");
@@ -731,7 +746,7 @@ export function MessageThread({
         onUpdateMessage(tempId, { status: "failed" });
       }
     },
-    [conversation, onNewMessage, onUpdateMessage, t],
+    [conversation, onNewMessage, onUpdateMessage, noteClaim, t],
   );
 
   // Build a quick id → Message map so reply quotes can be rendered without

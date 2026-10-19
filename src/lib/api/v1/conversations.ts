@@ -135,3 +135,23 @@ export function serializeMessage(
     created_at: m.created_at,
   };
 }
+
+const ASSIGNEE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * PostgREST `.or()` filter for `?assigned_to=<user id>`, optionally with
+ * `&include_unassigned=true`: one agent's chats, or the chats that agent
+ * may see. Null when no `assigned_to` was given; throws on a value that
+ * is not a user id, so nothing unchecked reaches the filter grammar.
+ */
+export function assignmentFilter(params: URLSearchParams): string | null {
+  const assignee = params.get('assigned_to');
+  if (!assignee) return null;
+  if (!ASSIGNEE_RE.test(assignee)) {
+    throw new Error("'assigned_to' must be a user id");
+  }
+  const mine = `assigned_agent_id.eq.${assignee}`;
+  return params.get('include_unassigned') === 'true'
+    ? `${mine},assigned_agent_id.is.null`
+    : mine;
+}

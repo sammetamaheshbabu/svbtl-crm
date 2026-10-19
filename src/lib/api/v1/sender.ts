@@ -11,26 +11,33 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SendMessageError } from '@/lib/whatsapp/send-message';
+import type { AccountRole } from '@/lib/auth/roles';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface Sender {
+  id: string;
+  /** Their role in the account; agents are limited to their own and unassigned chats. */
+  role: AccountRole;
+}
 
 /**
  * The validated sender for a public-API send, or null when none was given.
  * Throws `SendMessageError` (400) for a malformed id or one that is not a
  * member of the account.
  */
-export async function resolveSenderId(
+export async function resolveSender(
   db: SupabaseClient,
   accountId: string,
   raw: unknown
-): Promise<string | null> {
+): Promise<Sender | null> {
   if (raw === undefined || raw === null || raw === '') return null;
   if (typeof raw !== 'string' || !UUID_RE.test(raw)) {
     throw new SendMessageError('bad_request', "'sender_user_id' must be a user id", 400);
   }
   const { data } = await db
     .from('profiles')
-    .select('user_id')
+    .select('user_id, account_role')
     .eq('user_id', raw)
     .eq('account_id', accountId)
     .maybeSingle();
@@ -41,7 +48,7 @@ export async function resolveSenderId(
       400
     );
   }
-  return raw;
+  return { id: raw, role: (data as { account_role: AccountRole }).account_role };
 }
 
 /** Full names of the account's members among `userIds`, by auth user id. */

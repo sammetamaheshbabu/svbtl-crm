@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // still delivered a real WhatsApp message to the customer and merely
     // failed to record it (surfacing as "sent to Meta but failed to save
     // to DB"). RLS can't un-send that, so the role check belongs here.
-    const { supabase, accountId, userId } = await requireRole('agent')
+    const { supabase, accountId, userId, role } = await requireRole('agent')
 
     // Per-user rate limit. Bucket key is scoped to this route so
     // `/broadcast` has an independent budget.
@@ -168,14 +168,17 @@ export async function POST(request: Request) {
         templateMessageParams: template_message_params,
         interactivePayload: interactive_payload,
         replyToMessageId: reply_to_message_id,
-        // Who replied, so the inbox can show the sender's name
+        // Who replied, so the inbox can show the sender's name; an agent's
+        // reply also claims an unassigned chat
         senderId: userId,
+        senderRole: role,
       })
 
       return NextResponse.json({
         success: true,
         message_id: result.messageId,
         whatsapp_message_id: result.whatsappMessageId,
+        claimed: result.claimed,
       })
     } catch (err) {
       if (err instanceof SendMessageError) {

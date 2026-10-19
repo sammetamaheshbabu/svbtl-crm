@@ -170,6 +170,35 @@ not tell which team member replied.
 changes `sendMessage`, keep passing `senderId` through to the insert.
 **Consumer:** the mobile app's backend sends `sender_user_id`; the app shows `sender_name`.
 
+### H. Agents see their own and unassigned chats; claim on reply
+**Branch:** `agent-visibility` (2026-10-19)
+**Files:** `supabase/migrations/047_agent_conversation_visibility.sql`, `src/lib/whatsapp/send-message.ts`,
+`src/app/api/whatsapp/send/route.ts`, `src/app/api/v1/messages/route.ts`, `src/lib/api/v1/sender.ts`,
+`src/app/api/v1/conversations/route.ts`, `src/lib/api/v1/conversations.ts`,
+`src/components/inbox/message-thread.tsx`
+
+- **Visibility (migration 047):** the `conversations` RLS policies now let owners and admins see
+  every chat, and agents and viewers only chats assigned to them or unassigned. Messages and
+  reactions follow automatically, since their policies look the conversation up. An agent may still
+  hand a chat they can see to someone else (separate `WITH CHECK`).
+- **Claim on reply:** when an agent (or viewer) replies to an unassigned chat, the chat is assigned
+  to them, only if still unassigned (`claimConversation`). Owners and admins never claim. An agent
+  sending into someone else's chat gets a 403 "assigned to someone else".
+- `POST /api/v1/messages`: the sender's role comes from `sender_user_id`; the response adds
+  `assigned_to_sender`. The dashboard send returns `claimed`, and the thread updates the assignee.
+- `GET /api/v1/conversations` accepts `?assigned_to=<user id>` and `&include_unassigned=true`.
+
+**Why:** each department (Studio, web and Android, EduSMS) has its own agent; agents should see
+only their chats plus unassigned ones, while admins see everything. Department assignment itself is
+configured in Automations ("Tag added" → "Assign conversation"), not in code.
+**Tests:** `send-message.assignment.test.ts` (who may send, claim), `sender.test.ts` (role),
+`conversations.test.ts` (`assignmentFilter`).
+**Upstream-merge risk:** *High.* Changes RLS on a core table and the shared send path. If upstream
+changes `conversations` policies, re-apply the agent rule on top of theirs.
+**Applying the migration:** run 047 in the Supabase SQL editor (the schema is otherwise
+upstream's). It is safe to run before or after the code deploys.
+**Consumer:** the mobile app's backend filters chats the same way for agents.
+
 ---
 
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
@@ -183,7 +212,7 @@ These are **not** code changes; they're how this instance is wired. A fresh fork
 - **Env vars** (names only — values in `.env.local` / Vercel, see `.env.local.example`):
   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
   `ENCRYPTION_KEY`, `META_APP_SECRET`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_LOCALE`.
-- **Supabase:** schema is **upstream's migrations, unmodified**. Deployment-specific config:
+- **Supabase:** schema is **upstream's migrations, plus our `047_agent_conversation_visibility.sql`** (run by hand in the SQL editor). Deployment-specific config:
   Auth → URL Configuration → **Site URL = the production domain** + Redirect URLs (so confirmation
   / reset emails don't fall back to `localhost`).
 - **Hosting:** Vercel, custom domain behind Cloudflare. `NEXT_PUBLIC_*` are inlined at build, so a
