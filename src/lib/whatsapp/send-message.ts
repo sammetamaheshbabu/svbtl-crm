@@ -42,6 +42,7 @@ import {
 } from '@/lib/whatsapp/phone-utils';
 import { resolveContactSendTarget } from '@/lib/whatsapp/wa-identity';
 import type { MessageTemplate } from '@/types';
+import { hasMinRole, type AccountRole } from '@/lib/auth/roles';
 import {
   resolveTemplateRow,
   templateBodyParams,
@@ -92,6 +93,13 @@ export interface SendMessageParams {
    * inbox can say who replied. Null for sends with no person behind them.
    */
   senderId?: string | null;
+  /**
+   * The sender's role in the account. An agent (or viewer) may not send
+   * into a chat assigned to someone else, and replying to an unassigned
+   * chat assigns it to them ("claim on reply"). Owners and admins neither
+   * claim nor are limited. Omit for sends with no person behind them.
+   */
+  senderRole?: AccountRole | null;
 }
 
 export interface SendMessageResult {
@@ -99,6 +107,19 @@ export interface SendMessageResult {
   messageId: string;
   /** Meta's `wamid` for the delivered message. */
   whatsappMessageId: string;
+  /** True when this reply assigned the unassigned chat to the sender. */
+  claimed: boolean;
+}
+
+/**
+ * Whether a send is held to an agent's limits: a named sender below admin.
+ * Exported for tests.
+ */
+export function isAgentSender(
+  senderId: string | null | undefined,
+  senderRole: AccountRole | null | undefined
+): senderId is string {
+  return Boolean(senderId && senderRole && !hasMinRole(senderRole, 'admin'));
 }
 
 /**
@@ -206,6 +227,7 @@ export async function sendMessageToConversation(
     interactivePayload,
     replyToMessageId,
     senderId,
+    senderRole,
   } = params;
 
   if (!conversationId) {
@@ -236,6 +258,17 @@ export async function sendMessageToConversation(
 
   if (convError || !conversation) {
     throw new SendMessageError('not_found', 'Conversation not found', 404);
+  }
+
+  // Each department's chats stay with the person handling them.
+  const agentSender = isAgentSender(senderId, senderRole);
+  const assignedTo: string | null = conversation.assigned_agent_id ?? null;
+  if (agentSender && assignedTo && assignedTo !== senderId) {
+    throw new SendMessageError(
+      'forbidden',
+      'This chat is assigned to someone else',
+      403
+    );
   }
 
   const contact = conversation.contact;
@@ -544,5 +577,37 @@ export async function sendMessageToConversation(
     );
   }
 
-  return { messageId: messageRecord.id, whatsappMessageId: waMessageId };
+  // Claim on reply: the agent who answers an unassigned chat becomes its
+  // owner. Only when still unassigned, so two agents replying at once
+  // cannot take it from each other. Best-effort: the message is sent.
+  const claimed =
+    agentSender && !assignedTo
+      ? await claimConversation(db, conversationId, senderId)
+      : false;
+
+  return { messageId: messageRecord.id, whatsappMessageId: waMessageId, claimed };
+}
+
+/**
+ * Assigns a chat to `userId` only if it is still unassigned, so two
+ * agents replying at once cannot take it from each other. True when this
+ * call made the assignment. Failures are logged, not thrown: the message
+ * has already been sent.
+ */
+export async function claimConversation(
+  db: SupabaseClient,
+  conversationId: string,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await db
+    .from('conversations')
+    .update({ assigned_agent_id: userId })
+    .eq('id', conversationId)
+    .is('assigned_agent_id', null)
+    .select('id');
+  if (error) {
+    console.error('[send] claim-on-reply failed:', error.message);
+    return false;
+  }
+  return (data?.length ?? 0) > 0;
 }

@@ -23,13 +23,15 @@
 //       "params": ["A123"] | { "body": [...] }   // array = positional body; object = structured
 //     },
 //     "reply_to_message_id": "<uuid>",       // optional, must be in the same conversation
-//     "sender_user_id": "<uuid>",            // optional, the team member sending; must be in this account
+//     "sender_user_id": "<uuid>",            // optional, the team member sending; must be in this account.
+//                                            // An agent may not send into a chat assigned to someone
+//                                            // else (403); replying to an unassigned chat assigns it to them.
 //     "name": "Jane Doe"                     // optional, names a newly-created contact
 //   }
 //
 // Response (201):
 //   { "data": { "message_id", "whatsapp_message_id", "conversation_id",
-//               "contact_id", "contact_created" } }
+//               "contact_id", "contact_created", "assigned_to_sender" } }
 // ============================================================
 
 import { requireApiKey } from '@/lib/auth/api-context';
@@ -41,7 +43,7 @@ import {
   SendMessageError,
 } from '@/lib/whatsapp/send-message';
 import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive';
-import { resolveSenderId } from '@/lib/api/v1/sender';
+import { resolveSender } from '@/lib/api/v1/sender';
 
 export async function POST(request: Request) {
   try {
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
 
     // Checked before the conversation is resolved, so a bad sender 400s
     // without creating anything.
-    const senderId = await resolveSenderId(ctx.supabase, ctx.accountId, body.sender_user_id);
+    const sender = await resolveSender(ctx.supabase, ctx.accountId, body.sender_user_id);
 
     // Find-or-create the conversation for this phone, then send. Both
     // steps share `SendMessageError`, so one catch maps the whole
@@ -130,7 +132,8 @@ export async function POST(request: Request) {
           typeof body.reply_to_message_id === 'string'
             ? body.reply_to_message_id
             : null,
-        senderId,
+        senderId: sender?.id ?? null,
+        senderRole: sender?.role ?? null,
       }
     );
 
@@ -141,6 +144,7 @@ export async function POST(request: Request) {
         conversation_id: resolved.conversationId,
         contact_id: resolved.contactId,
         contact_created: resolved.contactCreated,
+        assigned_to_sender: result.claimed,
       },
       201
     );

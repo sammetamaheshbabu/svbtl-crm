@@ -2,7 +2,9 @@
 // GET /api/v1/conversations — list conversations (scope: conversations:read)
 //
 // Keyset-paginated (newest first). Filters: `?status=` (open/pending/
-// closed) and `?contact_id=`. Each conversation embeds its contact +
+// closed), `?contact_id=`, and `?assigned_to=<user id>` (add
+// `&include_unassigned=true` for the chats that agent may see: theirs
+// plus unassigned ones). Each conversation embeds its contact +
 // tags via the shared CONVERSATION_SELECT.
 // ============================================================
 
@@ -17,7 +19,7 @@ import {
   CONVERSATION_SELECT,
   normalizeConversation,
 } from '@/lib/inbox/conversations';
-import { serializeConversation } from '@/lib/api/v1/conversations';
+import { assignmentFilter, serializeConversation } from '@/lib/api/v1/conversations';
 import type { Conversation } from '@/types';
 
 export async function GET(request: Request) {
@@ -27,6 +29,12 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
     const contactId = url.searchParams.get('contact_id');
+    let assignment: string | null;
+    try {
+      assignment = assignmentFilter(url.searchParams);
+    } catch (err) {
+      return fail('bad_request', (err as Error).message, 400);
+    }
 
     let query = ctx.supabase
       .from('conversations')
@@ -35,6 +43,7 @@ export async function GET(request: Request) {
 
     if (status) query = query.eq('status', status);
     if (contactId) query = query.eq('contact_id', contactId);
+    if (assignment) query = query.or(assignment);
 
     query = query
       .order('created_at', { ascending: false })

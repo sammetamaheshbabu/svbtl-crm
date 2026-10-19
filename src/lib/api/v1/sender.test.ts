@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { resolveSenderId, senderNames } from './sender';
+import { resolveSender, senderNames } from './sender';
 
 const ACCOUNT = 'acc-1';
 const ANN = '11111111-1111-4111-8111-111111111111';
@@ -10,8 +10,8 @@ const OTHER_ACCOUNT_USER = '33333333-3333-4333-8333-333333333333';
 /** A tiny stand-in for the profiles table that understands eq / in / maybeSingle. */
 function fakeDb() {
   const rows = [
-    { user_id: ANN, account_id: ACCOUNT, full_name: 'Ann Agent' },
-    { user_id: BOB, account_id: ACCOUNT, full_name: 'Bob Admin' },
+    { user_id: ANN, account_id: ACCOUNT, full_name: 'Ann Agent', account_role: 'agent' },
+    { user_id: BOB, account_id: ACCOUNT, full_name: 'Bob Admin', account_role: 'admin' },
     { user_id: OTHER_ACCOUNT_USER, account_id: 'acc-2', full_name: 'Someone Else' },
   ];
   return {
@@ -29,23 +29,24 @@ function fakeDb() {
   } as unknown as SupabaseClient;
 }
 
-describe('resolveSenderId', () => {
+describe('resolveSender', () => {
   it('is null when no sender is given', async () => {
-    expect(await resolveSenderId(fakeDb(), ACCOUNT, undefined)).toBeNull();
-    expect(await resolveSenderId(fakeDb(), ACCOUNT, '')).toBeNull();
+    expect(await resolveSender(fakeDb(), ACCOUNT, undefined)).toBeNull();
+    expect(await resolveSender(fakeDb(), ACCOUNT, '')).toBeNull();
   });
 
-  it('accepts a member of the account', async () => {
-    expect(await resolveSenderId(fakeDb(), ACCOUNT, ANN)).toBe(ANN);
+  it('accepts a member of the account, with their role', async () => {
+    expect(await resolveSender(fakeDb(), ACCOUNT, ANN)).toEqual({ id: ANN, role: 'agent' });
+    expect(await resolveSender(fakeDb(), ACCOUNT, BOB)).toEqual({ id: BOB, role: 'admin' });
   });
 
   it('refuses a malformed id', async () => {
-    await expect(resolveSenderId(fakeDb(), ACCOUNT, 'not-a-uuid')).rejects.toMatchObject({ status: 400 });
-    await expect(resolveSenderId(fakeDb(), ACCOUNT, 42)).rejects.toMatchObject({ status: 400 });
+    await expect(resolveSender(fakeDb(), ACCOUNT, 'not-a-uuid')).rejects.toMatchObject({ status: 400 });
+    await expect(resolveSender(fakeDb(), ACCOUNT, 42)).rejects.toMatchObject({ status: 400 });
   });
 
   it("refuses a user from another account, so messages can't be pinned on outsiders", async () => {
-    await expect(resolveSenderId(fakeDb(), ACCOUNT, OTHER_ACCOUNT_USER)).rejects.toMatchObject({ status: 400 });
+    await expect(resolveSender(fakeDb(), ACCOUNT, OTHER_ACCOUNT_USER)).rejects.toMatchObject({ status: 400 });
   });
 });
 

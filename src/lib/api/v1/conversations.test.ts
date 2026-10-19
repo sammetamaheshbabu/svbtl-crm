@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Conversation, Message } from '@/types';
-import { serializeConversation, serializeMessage } from './conversations';
+import { assignmentFilter, serializeConversation, serializeMessage } from './conversations';
 
 describe('serializeConversation', () => {
   it('projects public fields + nested contact/tags and drops internals', () => {
@@ -168,5 +168,25 @@ describe('serializeMessage sender_name', () => {
     expect(serializeMessage({ ...base, sender_type: 'agent', sender_id: 'u-gone' } as unknown as Message, names).sender_name).toBeNull();
     expect(serializeMessage({ ...base, sender_type: 'agent' } as unknown as Message, names).sender_name).toBeNull();
     expect(serializeMessage({ ...base, sender_type: 'agent', sender_id: 'u-ann' } as unknown as Message).sender_name).toBeNull();
+  });
+});
+
+describe('assignmentFilter', () => {
+  const ANN = '11111111-1111-4111-8111-111111111111';
+  const params = (q: string) => new URLSearchParams(q);
+
+  it("is null without assigned_to", () => {
+    expect(assignmentFilter(params(''))).toBeNull();
+  });
+
+  it("filters to one agent's chats, or theirs plus unassigned ones", () => {
+    expect(assignmentFilter(params(`assigned_to=${ANN}`))).toBe(`assigned_agent_id.eq.${ANN}`);
+    expect(assignmentFilter(params(`assigned_to=${ANN}&include_unassigned=true`))).toBe(
+      `assigned_agent_id.eq.${ANN},assigned_agent_id.is.null`
+    );
+  });
+
+  it('refuses anything but a user id, keeping the filter grammar safe', () => {
+    expect(() => assignmentFilter(params('assigned_to=x,id.neq.0'))).toThrow('user id');
   });
 });
