@@ -11,6 +11,7 @@ export const WEBHOOK_EVENTS = [
   'message.received', // an inbound WhatsApp message landed
   'message.status_updated', // a sent message advanced (sent/delivered/read)
   'conversation.created', // a new conversation was opened for a contact
+  'conversation.assigned', // a team member assigned (or unassigned) a conversation
 ] as const;
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
@@ -21,6 +22,7 @@ export const WEBHOOK_EVENT_DESCRIPTIONS: Record<WebhookEvent, string> = {
   'message.status_updated':
     'A message you sent changed delivery status (sent/delivered/read/failed)',
   'conversation.created': 'A new conversation was opened',
+  'conversation.assigned': 'A team member assigned a conversation to someone (or unassigned it)',
 };
 
 /** Type-narrow an unknown value into a valid `WebhookEvent`. */

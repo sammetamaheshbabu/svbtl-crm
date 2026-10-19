@@ -157,6 +157,15 @@
     }
   },
   "Inbox": {
+    "handoff": {
+      "someone": "Un miembro del equipo",
+      "took": "{to} tomó este chat",
+      "handedOver": "{actor} pasó este chat a {to}",
+      "assigned": "{actor} asignó este chat a {to}",
+      "assignedAuto": "Asignado a {to} automáticamente",
+      "unassigned": "{actor} quitó la asignación de este chat",
+      "unassignedAuto": "Chat sin asignar"
+    },
     "page": {
       "whatsappNotConnected": "WhatsApp® no está conectado. Ve a Configuración para conectar tu cuenta."
     },
@@ -2530,6 +2539,7 @@
       "internalServerError": "Error interno del servidor",
       "profileNotLinked": "Tu perfil no está vinculado a una cuenta.",
       "conversationNotFound": "Conversación no encontrada",
+      "assigneeNotMember": "Esa persona no forma parte de este equipo.",
       "failedToLoadConversation": "Error al cargar la conversación",
       "whatsappNotConfigured": "WhatsApp no configurado",
       "whatsappNotConfiguredDot": "WhatsApp no configurado.",

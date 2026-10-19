@@ -157,6 +157,15 @@
     }
   },
   "Inbox": {
+    "handoff": {
+      "someone": "팀원",
+      "took": "{to}님이 이 채팅을 맡았습니다",
+      "handedOver": "{actor}님이 이 채팅을 {to}님에게 넘겼습니다",
+      "assigned": "{actor}님이 이 채팅을 {to}님에게 배정했습니다",
+      "assignedAuto": "{to}님에게 자동 배정되었습니다",
+      "unassigned": "{actor}님이 이 채팅의 배정을 해제했습니다",
+      "unassignedAuto": "채팅 배정 해제됨"
+    },
     "page": {
       "whatsappNotConnected": "WhatsApp®이 연결되어 있지 않습니다. 설정으로 이동해 계정을 연결하세요."
     },
@@ -2530,6 +2539,7 @@
       "internalServerError": "내부 서버 오류",
       "profileNotLinked": "프로필이 계정에 연결되어 있지 않습니다.",
       "conversationNotFound": "대화를 찾을 수 없습니다",
+      "assigneeNotMember": "이 팀의 구성원이 아닙니다.",
       "failedToLoadConversation": "대화를 불러오지 못했습니다",
       "whatsappNotConfigured": "WhatsApp가 설정되지 않았습니다",
       "whatsappNotConfiguredDot": "WhatsApp가 설정되지 않았습니다.",

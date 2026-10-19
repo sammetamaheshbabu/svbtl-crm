@@ -199,6 +199,39 @@ changes `conversations` policies, re-apply the agent rule on top of theirs.
 upstream's). It is safe to run before or after the code deploys.
 **Consumer:** the mobile app's backend filters chats the same way for agents.
 
+### I. Handoff history and handing chats over
+**Branch:** `handoff-history` (2026-10-19)
+**Files:** `supabase/migrations/048_conversation_assignments.sql`, `src/lib/conversations/assign.ts`,
+`src/app/api/conversations/[conversationId]/assign/route.ts`, `src/lib/inbox/assignment-events.ts`,
+`src/components/inbox/message-thread.tsx`, `src/lib/whatsapp/send-message.ts`,
+`src/app/api/v1/conversations/[id]/route.ts` (PATCH), `src/app/api/v1/conversations/[id]/assignments/route.ts`,
+`src/app/api/v1/members/route.ts`, `src/lib/webhooks/events.ts`, `messages/*.json` (`Inbox.handoff`)
+
+- **History (migration 048):** a trigger records every change of `assigned_agent_id` in
+  `conversation_assignments` (from, to, who did it, when), whichever path made it. Readable by
+  whoever can see the chat. `assign_conversation()` assigns and names the actor for service-role
+  callers (it sets `app.assignment_actor` for its transaction); signed-in users are named by
+  `auth.uid()`, so the actor cannot be spoofed.
+- **Thread:** handoffs show between messages ("Manas handed this chat to Mehveen · 16:40").
+- **Assigning:** the inbox's assignee picker now posts to `/api/conversations/{id}/assign` instead
+  of updating the row from the browser, so the handoff is recorded and announced. Claim on reply
+  uses the same function.
+- **Webhook `conversation.assigned`:** sent when a person (inbox, API, claim) changes the assignee,
+  with `from_agent_id`, `to_agent_id`, `actor_user_id`, `actor_name`, `contact_name`. Automations
+  and Flows are recorded in the history but send no webhook (the customer's message alerts already).
+- **Public API:** `PATCH /api/v1/conversations/{id}` `{assigned_agent_id, actor_user_id?}`
+  (scope `messages:send`: handing over is part of working the inbox, and existing keys cannot gain
+  a new scope), `GET /api/v1/conversations/{id}/assignments`, `GET /api/v1/members`.
+
+**Why:** chats move between departments (Studio → EduSMS); everyone on the team can hand one over,
+the new owner is alerted on their phone, and the chat keeps a record of each handoff.
+**Tests:** `assign.test.ts`, `assignment-events.test.ts`, `send-message.assignment.test.ts`.
+**Upstream-merge risk:** *Medium.* New table and function; the assignee picker and the send path
+call them. If upstream changes the picker, keep it going through the assign route.
+**Applying the migration:** run 048 in the Supabase SQL editor **before** deploying this code — the
+assignee picker and claim on reply call `assign_conversation()`.
+**Consumer:** the mobile app shows the history, assigns from the chat, and alerts the new owner.
+
 ---
 
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
@@ -212,7 +245,7 @@ These are **not** code changes; they're how this instance is wired. A fresh fork
 - **Env vars** (names only — values in `.env.local` / Vercel, see `.env.local.example`):
   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
   `ENCRYPTION_KEY`, `META_APP_SECRET`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_LOCALE`.
-- **Supabase:** schema is **upstream's migrations, plus our `047_agent_conversation_visibility.sql`** (run by hand in the SQL editor). Deployment-specific config:
+- **Supabase:** schema is **upstream's migrations, plus our `047_agent_conversation_visibility.sql` and `048_conversation_assignments.sql`** (run by hand in the SQL editor). Deployment-specific config:
   Auth → URL Configuration → **Site URL = the production domain** + Redirect URLs (so confirmation
   / reset emails don't fall back to `localhost`).
 - **Hosting:** Vercel, custom domain behind Cloudflare. `NEXT_PUBLIC_*` are inlined at build, so a

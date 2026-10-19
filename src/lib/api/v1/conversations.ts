@@ -155,3 +155,33 @@ export function assignmentFilter(params: URLSearchParams): string | null {
     ? `${mine},assigned_agent_id.is.null`
     : mine;
 }
+
+export interface AssignmentRow {
+  id: string;
+  from_agent_id: string | null;
+  to_agent_id: string | null;
+  actor_user_id: string | null;
+  created_at: string;
+}
+
+/** One handoff in the public API, with the team members' names. */
+export interface ApiAssignment extends AssignmentRow {
+  from_name: string | null;
+  to_name: string | null;
+  /** Null for a change nobody made by hand (an automation or Flow). */
+  actor_name: string | null;
+}
+
+export function serializeAssignment(row: AssignmentRow, names: Map<string, string>): ApiAssignment {
+  const name = (id: string | null) => (id ? (names.get(id) ?? null) : null);
+  return {
+    id: row.id,
+    from_agent_id: row.from_agent_id,
+    to_agent_id: row.to_agent_id,
+    actor_user_id: row.actor_user_id,
+    from_name: name(row.from_agent_id),
+    to_name: name(row.to_agent_id),
+    actor_name: name(row.actor_user_id),
+    created_at: row.created_at,
+  };
+}

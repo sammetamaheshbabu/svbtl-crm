@@ -43,6 +43,7 @@ import {
 import { resolveContactSendTarget } from '@/lib/whatsapp/wa-identity';
 import type { MessageTemplate } from '@/types';
 import { hasMinRole, type AccountRole } from '@/lib/auth/roles';
+import { assignConversation } from '@/lib/conversations/assign';
 import {
   resolveTemplateRow,
   templateBodyParams,
@@ -582,7 +583,7 @@ export async function sendMessageToConversation(
   // cannot take it from each other. Best-effort: the message is sent.
   const claimed =
     agentSender && !assignedTo
-      ? await claimConversation(db, conversationId, senderId)
+      ? await claimConversation(db, accountId, conversationId, senderId)
       : false;
 
   return { messageId: messageRecord.id, whatsappMessageId: waMessageId, claimed };
@@ -596,18 +597,20 @@ export async function sendMessageToConversation(
  */
 export async function claimConversation(
   db: SupabaseClient,
+  accountId: string,
   conversationId: string,
   userId: string
 ): Promise<boolean> {
-  const { data, error } = await db
-    .from('conversations')
-    .update({ assigned_agent_id: userId })
-    .eq('id', conversationId)
-    .is('assigned_agent_id', null)
-    .select('id');
-  if (error) {
-    console.error('[send] claim-on-reply failed:', error.message);
+  try {
+    const { changed } = await assignConversation(db, accountId, {
+      conversationId,
+      agentId: userId,
+      actorUserId: userId,
+      onlyIfUnassigned: true,
+    });
+    return changed;
+  } catch (err) {
+    console.error('[send] claim-on-reply failed:', err instanceof Error ? err.message : err);
     return false;
   }
-  return (data?.length ?? 0) > 0;
 }
