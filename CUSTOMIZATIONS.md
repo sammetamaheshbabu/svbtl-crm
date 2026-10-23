@@ -11,7 +11,7 @@ document records **every change we made on top of upstream and why**, so that:
 | Upstream | `https://github.com/ArnasDon/wacrm` (remote: `upstream`) |
 | This fork | `https://github.com/sammetamaheshbabu/svbtl-crm` (remote: `origin`) |
 | Fork point (merge-base) | `27c6bdf` |
-| Last reviewed | 2026-10-17 — fork is 9 commits ahead of the fork point `27c6bdf` |
+| Last reviewed | 2026-10-24 — fork is 14 commits (20 with merges) ahead of the fork point `27c6bdf` |
 
 > **Scope.** This file documents **code** changes (tracked in git) plus the **deployment
 > configuration** we rely on (not in git). It intentionally contains **no secrets** — tokens,
@@ -30,20 +30,39 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (11):
+Files we changed vs upstream (37, not counting this file; section letter in brackets):
 
 ```
-.gitignore
-docs/security-and-backup.md
-messages/en.json
-src/app/(auth)/login/page.tsx
-src/app/(auth)/signup/page.tsx
-src/app/(dashboard)/settings/page.tsx
-src/app/layout.tsx
-src/components/inbox/message-composer.tsx
-src/components/settings/settings-rail.tsx
-src/components/settings/settings-sections.ts
-src/lib/api/v1/conversations.ts
+.gitignore                                                    [E]
+docs/security-and-backup.md                                   [E]
+messages/en.json                                              [A, I]
+messages/es.json, ko.json, pt.json                            [I]
+src/app/(auth)/login/page.tsx                                 [B]
+src/app/(auth)/signup/page.tsx                                [B]
+src/app/(dashboard)/settings/page.tsx                         [C]
+src/app/layout.tsx                                            [A]
+src/app/api/conversations/[conversationId]/assign/route.ts    [I]  new
+src/app/api/v1/conversations/[id]/assignments/route.ts        [I]  new
+src/app/api/v1/conversations/[id]/messages/route.ts           [G]
+src/app/api/v1/conversations/[id]/route.ts                    [I]  new
+src/app/api/v1/conversations/route.ts                         [H]
+src/app/api/v1/members/route.ts                               [I]  new
+src/app/api/v1/messages/route.ts                              [G, H]
+src/app/api/whatsapp/send/route.ts (+ route.test.ts)          [G, H, I]
+src/components/inbox/message-bubble.tsx                       [G]
+src/components/inbox/message-composer.tsx                     [D]
+src/components/inbox/message-thread.tsx                       [G, H, I]
+src/components/settings/settings-rail.tsx                     [C]
+src/components/settings/settings-sections.ts                  [C]
+src/lib/api/v1/conversations.ts (+ .test.ts)                  [F, G, H, I]
+src/lib/api/v1/sender.ts (+ .test.ts)                         [G, H]  new
+src/lib/conversations/assign.ts (+ .test.ts)                  [I]  new
+src/lib/inbox/assignment-events.ts (+ .test.ts)               [I]  new
+src/lib/webhooks/events.ts                                    [I]
+src/lib/whatsapp/send-message.ts                              [G, H, I]
+src/lib/whatsapp/send-message.assignment.test.ts              [H, I]  new
+supabase/migrations/047_agent_conversation_visibility.sql     [H]  new
+supabase/migrations/048_conversation_assignments.sql          [I]  new
 ```
 
 ### A. Branding → "SVBTL CRM"
@@ -149,7 +168,7 @@ directly; the public API did not expose it.
 **Consumer:** the mobile app in the `SVB-CRM-APP` repository reads this field.
 
 ### G. Who sent each reply (sender names)
-**Branch:** `message-sender` (2026-10-19)
+**Commits:** `52849c7`, `bb178f4` (branch `message-sender`, merged as `5b48072`, 2026-10-19)
 **Files:** `src/lib/whatsapp/send-message.ts`, `src/app/api/whatsapp/send/route.ts`,
 `src/app/api/v1/messages/route.ts`, `src/lib/api/v1/sender.ts`, `src/lib/api/v1/conversations.ts`,
 `src/app/api/v1/conversations/[id]/messages/route.ts`, `src/components/inbox/message-bubble.tsx`,
@@ -171,7 +190,7 @@ changes `sendMessage`, keep passing `senderId` through to the insert.
 **Consumer:** the mobile app's backend sends `sender_user_id`; the app shows `sender_name`.
 
 ### H. Agents see their own and unassigned chats; claim on reply
-**Branch:** `agent-visibility` (2026-10-19)
+**Commit:** `b0a6af7` (branch `agent-visibility`, merged as `f765022`, 2026-10-19)
 **Files:** `supabase/migrations/047_agent_conversation_visibility.sql`, `src/lib/whatsapp/send-message.ts`,
 `src/app/api/whatsapp/send/route.ts`, `src/app/api/v1/messages/route.ts`, `src/lib/api/v1/sender.ts`,
 `src/app/api/v1/conversations/route.ts`, `src/lib/api/v1/conversations.ts`,
@@ -200,10 +219,10 @@ upstream's). It is safe to run before or after the code deploys.
 **Consumer:** the mobile app's backend filters chats the same way for agents.
 
 ### I. Handoff history and handing chats over
-**Branch:** `handoff-history` (2026-10-19)
+**Commit:** `5b97baf` (branch `handoff-history`, merged as `67e52d5`, 2026-10-19)
 **Files:** `supabase/migrations/048_conversation_assignments.sql`, `src/lib/conversations/assign.ts`,
 `src/app/api/conversations/[conversationId]/assign/route.ts`, `src/lib/inbox/assignment-events.ts`,
-`src/components/inbox/message-thread.tsx`, `src/lib/whatsapp/send-message.ts`,
+`src/components/inbox/message-thread.tsx`, `src/lib/whatsapp/send-message.ts`, `src/lib/api/v1/conversations.ts`,
 `src/app/api/v1/conversations/[id]/route.ts` (PATCH), `src/app/api/v1/conversations/[id]/assignments/route.ts`,
 `src/app/api/v1/members/route.ts`, `src/lib/webhooks/events.ts`, `messages/*.json` (`Inbox.handoff`)
 
@@ -274,11 +293,18 @@ git merge upstream/main                     # or: git rebase upstream/main
 
 After merging, **re-check the medium/high-risk files** from Section 1 — in likelihood order:
 
-1. `src/components/inbox/message-composer.tsx` (D) — most actively changed upstream.
-2. `src/app/(auth)/signup/page.tsx`, `login/page.tsx` (B).
-3. `src/components/settings/*` and `settings/page.tsx` (C).
-4. `messages/en.json`, `src/app/layout.tsx` (A) — confirm branding strings survived.
-5. `src/lib/api/v1/conversations.ts` (F) — confirm the `interactive` field is still returned.
+1. `supabase/migrations/` (H, I) — if upstream adds a migration numbered 047 or 048, renumber ours,
+   and if it changes the `conversations` policies, re-apply the agent rule on top of theirs.
+2. `src/lib/whatsapp/send-message.ts` and `src/app/api/whatsapp/send/route.ts` (G, H, I) — keep
+   `senderId`, the who-may-send check and claim on reply.
+3. `src/components/inbox/message-composer.tsx` (D) — most actively changed upstream.
+4. `src/components/inbox/message-thread.tsx`, `message-bubble.tsx` (G, H, I) — sender name, handoff
+   lines, and the assignee picker going through `/api/conversations/{id}/assign`.
+5. `src/app/(auth)/signup/page.tsx`, `login/page.tsx` (B).
+6. `src/components/settings/*` and `settings/page.tsx` (C).
+7. `src/lib/api/v1/conversations.ts` and the v1 routes (F, G, H, I) — confirm `interactive`,
+   `sender_name` and the assignment filter are still returned.
+8. `messages/*.json`, `src/app/layout.tsx` (A, I) — confirm branding and `Inbox.handoff` strings survived.
 
 Then verify:
 
@@ -286,6 +312,8 @@ Then verify:
 npm run typecheck && npm run lint && npm run build && npm test
 ```
 
-and smoke-test: invite-only signup gate, agent cannot see admin settings tabs, and the mobile
-composer (newline on Enter + full-width input). If a customization has since landed upstream,
+and smoke-test: invite-only signup gate, agent cannot see admin settings tabs, the mobile
+composer (newline on Enter + full-width input), an agent sees only their own and unassigned chats,
+replying to an unassigned chat claims it, our replies show the sender's name, and handing a chat
+over shows a handoff line in the thread. If a customization has since landed upstream,
 drop ours to reduce drift.
