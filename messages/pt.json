@@ -339,7 +339,8 @@
       "unassignedAuto": "Conversa sem atribuição"
     },
     "page": {
-      "whatsappNotConnected": "O WhatsApp® não está conectado. Vá em Configurações para conectar sua conta."
+      "whatsappNotConnected": "O WhatsApp® não está conectado. Vá em Configurações para conectar sua conta.",
+      "contactSheetTitle": "Dados do contato"
     },
     "conversationList": {
       "searchPlaceholder": "Buscar conversas...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "Falha ao atualizar a atribuição",
       "networkError": "erro de rede",
       "documentFallback": "Documento",
-      "you": "Você"
+      "you": "Você",
+      "openContact": "Abrir os dados de {name}"
     },
     "sessionTimer": {
       "expired": "Expirada",
@@ -539,7 +541,23 @@
       "deals": "Negócios",
       "noTags": "Sem tags",
       "noDeals": "Sem negócios",
-      "addNotePlaceholder": "Adicionar uma nota..."
+      "addNotePlaceholder": "Adicionar uma nota...",
+      "editProfile": "Editar perfil",
+      "nameLabel": "Nome",
+      "emailLabel": "E-mail",
+      "companyLabel": "Empresa",
+      "phoneReadOnly": "O número de telefone não pode ser alterado em uma conversa.",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "profileSaved": "Perfil salvo",
+      "profileSaveFailed": "Não foi possível salvar o perfil",
+      "invalidEmail": "Informe um e-mail válido",
+      "addTag": "Adicionar tag",
+      "searchTags": "Buscar tags",
+      "noMoreTags": "Nenhuma outra tag",
+      "noTagsDefined": "Ainda não há tags. Administradores as criam em Configurações → Campos e tags.",
+      "removeTag": "Remover {name}",
+      "tagFailed": "Não foi possível atualizar as tags"
     },
     "aiBanner": {
       "pausedTitle": "O assistente de IA está pausado aqui",

@@ -339,7 +339,8 @@
       "unassignedAuto": "Chat unassigned"
     },
     "page": {
-      "whatsappNotConnected": "WhatsApp® is not connected. Go to Settings to connect your account."
+      "whatsappNotConnected": "WhatsApp® is not connected. Go to Settings to connect your account.",
+      "contactSheetTitle": "Contact details"
     },
     "conversationList": {
       "searchPlaceholder": "Search conversations...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "Failed to update assignment",
       "networkError": "network error",
       "documentFallback": "Document",
-      "you": "You"
+      "you": "You",
+      "openContact": "Open {name}'s details"
     },
     "sessionTimer": {
       "expired": "Expired",
@@ -539,7 +541,23 @@
       "deals": "Deals",
       "noTags": "No tags",
       "noDeals": "No deals",
-      "addNotePlaceholder": "Add a note..."
+      "addNotePlaceholder": "Add a note...",
+      "editProfile": "Edit profile",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "companyLabel": "Company",
+      "phoneReadOnly": "The phone number can't be changed from a chat.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "profileSaved": "Profile saved",
+      "profileSaveFailed": "Couldn't save the profile",
+      "invalidEmail": "Enter a valid email address",
+      "addTag": "Add tag",
+      "searchTags": "Search tags",
+      "noMoreTags": "No other tags",
+      "noTagsDefined": "No tags yet. Admins add them in Settings → Fields & tags.",
+      "removeTag": "Remove {name}",
+      "tagFailed": "Couldn't update the tags"
     },
     "aiBanner": {
       "pausedTitle": "AI assistant is paused here",

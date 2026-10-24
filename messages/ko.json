@@ -339,7 +339,8 @@
       "unassignedAuto": "채팅 배정 해제됨"
     },
     "page": {
-      "whatsappNotConnected": "WhatsApp®이 연결되어 있지 않습니다. 설정으로 이동해 계정을 연결하세요."
+      "whatsappNotConnected": "WhatsApp®이 연결되어 있지 않습니다. 설정으로 이동해 계정을 연결하세요.",
+      "contactSheetTitle": "연락처 정보"
     },
     "conversationList": {
       "searchPlaceholder": "대화 검색...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "담당자 변경에 실패했습니다",
       "networkError": "네트워크 오류",
       "documentFallback": "문서",
-      "you": "나"
+      "you": "나",
+      "openContact": "{name} 정보 열기"
     },
     "sessionTimer": {
       "expired": "만료됨",
@@ -539,7 +541,23 @@
       "deals": "딜",
       "noTags": "태그 없음",
       "noDeals": "딜 없음",
-      "addNotePlaceholder": "메모 추가..."
+      "addNotePlaceholder": "메모 추가...",
+      "editProfile": "프로필 편집",
+      "nameLabel": "이름",
+      "emailLabel": "이메일",
+      "companyLabel": "회사",
+      "phoneReadOnly": "채팅에서는 전화번호를 바꿀 수 없습니다.",
+      "save": "저장",
+      "cancel": "취소",
+      "profileSaved": "프로필을 저장했습니다",
+      "profileSaveFailed": "프로필을 저장하지 못했습니다",
+      "invalidEmail": "올바른 이메일을 입력하세요",
+      "addTag": "태그 추가",
+      "searchTags": "태그 검색",
+      "noMoreTags": "다른 태그가 없습니다",
+      "noTagsDefined": "아직 태그가 없습니다. 관리자가 설정 → 필드 및 태그에서 추가합니다.",
+      "removeTag": "{name} 제거",
+      "tagFailed": "태그를 업데이트하지 못했습니다"
     },
     "aiBanner": {
       "pausedTitle": "이 대화에서 AI 어시스턴트가 일시 중지됨",

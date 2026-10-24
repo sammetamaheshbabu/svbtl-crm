@@ -339,7 +339,8 @@
       "unassignedAuto": "Chat sin asignar"
     },
     "page": {
-      "whatsappNotConnected": "WhatsApp® no está conectado. Ve a Configuración para conectar tu cuenta."
+      "whatsappNotConnected": "WhatsApp® no está conectado. Ve a Configuración para conectar tu cuenta.",
+      "contactSheetTitle": "Datos del contacto"
     },
     "conversationList": {
       "searchPlaceholder": "Buscar conversaciones...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "Error al actualizar la asignación",
       "networkError": "error de red",
       "documentFallback": "Documento",
-      "you": "Tú"
+      "you": "Tú",
+      "openContact": "Abrir los datos de {name}"
     },
     "sessionTimer": {
       "expired": "Expirada",
@@ -539,7 +541,23 @@
       "deals": "Negocios",
       "noTags": "Sin etiquetas",
       "noDeals": "Sin negocios",
-      "addNotePlaceholder": "Agregar una nota..."
+      "addNotePlaceholder": "Agregar una nota...",
+      "editProfile": "Editar perfil",
+      "nameLabel": "Nombre",
+      "emailLabel": "Correo",
+      "companyLabel": "Empresa",
+      "phoneReadOnly": "El número de teléfono no se puede cambiar desde un chat.",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "profileSaved": "Perfil guardado",
+      "profileSaveFailed": "No se pudo guardar el perfil",
+      "invalidEmail": "Introduce un correo válido",
+      "addTag": "Añadir etiqueta",
+      "searchTags": "Buscar etiquetas",
+      "noMoreTags": "No hay más etiquetas",
+      "noTagsDefined": "Aún no hay etiquetas. Los administradores las crean en Configuración → Campos y etiquetas.",
+      "removeTag": "Quitar {name}",
+      "tagFailed": "No se pudieron actualizar las etiquetas"
     },
     "aiBanner": {
       "pausedTitle": "El asistente de IA está en pausa aquí",

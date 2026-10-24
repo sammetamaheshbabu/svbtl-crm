@@ -30,17 +30,17 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (61, not counting this file; section letter in brackets):
+Files we changed vs upstream (65, not counting this file; section letter in brackets):
 
 ```
 .gitignore                                                    [E]
 docs/security-and-backup.md                                   [E]
-messages/en.json                                              [A, I, J, K, L]
-messages/es.json, ko.json, pt.json                            [I, J, K, L]
+messages/en.json                                              [A, I, J, K, L, N]
+messages/es.json, ko.json, pt.json                            [I, J, K, L, N]
 src/app/(auth)/login/page.tsx                                 [B, L]
 src/app/(auth)/reset-password/page.tsx                        [L]
 src/app/(auth)/signup/page.tsx                                [B, L]
-src/app/(dashboard)/inbox/page.tsx                            [J]
+src/app/(dashboard)/inbox/page.tsx                            [J, N]
 src/app/(dashboard)/settings/page.tsx                         [C]
 src/app/layout.tsx                                            [A]
 src/app/api/conversations/[conversationId]/assign/route.ts    [I]  new
@@ -53,11 +53,12 @@ src/app/api/v1/messages/route.ts                              [G, H, J]
 src/app/api/v1/quick-replies/route.ts (+ route.test.ts)       [K]  new
 src/app/api/whatsapp/send/route.ts (+ route.test.ts)          [G, H, I, J]
 src/components/contacts/contact-detail-view.tsx               [J]
+src/components/inbox/contact-sidebar.tsx                      [N]
 src/components/inbox/conversation-list.tsx                    [J]
 src/components/inbox/message-bubble.tsx                       [D, G]
 src/components/inbox/message-composer.tsx                     [D, K]
 src/components/inbox/message-media.tsx                        [D]
-src/components/inbox/message-thread.tsx                       [G, H, I, J, K]
+src/components/inbox/message-thread.tsx                       [G, H, I, J, K, N]
 src/components/inbox/new-chat-dialog.tsx                      [J]  new
 src/components/inbox/quick-reply-picker.tsx                   [K]
 src/components/inbox/template-picker.tsx                      [J]
@@ -69,6 +70,7 @@ src/components/ui/password-input.tsx                          [L]  new
 src/lib/api/v1/conversations.ts (+ .test.ts)                  [F, G, H, I]
 src/lib/api/v1/sender.ts (+ .test.ts)                         [G, H]  new
 src/lib/auth/redeem-invitation-migration.test.ts              [M]
+src/lib/contacts/save-profile.ts (+ .test.ts)                 [N]  new
 src/lib/conversations/assign.ts (+ .test.ts)                  [I]  new
 src/lib/dashboard/agent-scope-migration.test.ts               [M]  new
 src/lib/inbox/assignment-events.ts (+ .test.ts)               [I]  new
@@ -386,6 +388,30 @@ filter, or drifts from upstream's function in any other way.
 **Upstream-merge risk:** *Medium.* If upstream changes `dashboard_overview`, copy their new
 version into a new 90x migration and re-apply the filter (the test will flag it).
 **Applying the migration:** run 903 **after** upstream's 059.
+
+### N. Edit tags and the customer profile from the chat
+**Branch:** `chat-contact-editing` (2026-10-24)
+**Files:** `src/components/inbox/contact-sidebar.tsx`, `src/lib/contacts/save-profile.ts`,
+`src/app/(dashboard)/inbox/page.tsx`, `src/components/inbox/message-thread.tsx`,
+`messages/*.json` (`Inbox.sidebar`, `Inbox.page.contactSheetTitle`, `Inbox.messageThread.openContact`)
+
+- **Profile:** ✎ next to the name edits name, email, company and any custom fields in place.
+  The phone number stays read-only (changing it would redirect the chat). `saveContactProfile`
+  validates the email, upserts filled custom values and deletes cleared ones; the new name shows in
+  the list and the chat header at once.
+- **Tags:** × on each tag removes it; + opens a searchable picker of the account's existing tags.
+  Both go through `/api/contacts/{id}/tags` (`tag-api.ts`), so adding a tag fires "Tag added"
+  automations — department routing — exactly as on the Contacts page. New tags are still created
+  by admins in Settings → Fields & tags.
+- **Who:** anyone who can send (agent and up), matching the contacts RLS. Viewers see it read-only.
+- **Where:** the side panel shows from 1280px (`xl`; it was `lg`, which squeezed the chat to ~190px
+  on 1024–1279px screens). Below that, tapping the customer's name or avatar in the chat header
+  opens the same panel as a sheet from the bottom. On desktop the same tap reopens a hidden panel.
+
+**Why:** staff tag and correct customers while chatting, on desktop and on their phones.
+**Tests:** `save-profile.test.ts`.
+**Upstream-merge risk:** *Medium.* `contact-sidebar.tsx` was read-only upstream; if upstream edits
+it, keep the edit form, tag controls and `variant` prop.
 
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
 
