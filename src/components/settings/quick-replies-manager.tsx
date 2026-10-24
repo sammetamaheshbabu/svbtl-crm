@@ -221,11 +221,13 @@ export function QuickRepliesManager() {
                     className="min-h-28 bg-muted text-foreground"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">{t("placeholdersHint", { name: "{name}", firstName: "{first_name}" })}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{t("variablesHint", { one: "{{1}}", two: "{{2}}" })}</p>
                 </div>
               ) : (
                 <InteractiveBuilder
                   value={draft.interactive_payload}
                   onChange={(p) => setDraft({ ...draft, interactive_payload: p })}
+                  allowImageHeader
                 />
               )}
             </div>

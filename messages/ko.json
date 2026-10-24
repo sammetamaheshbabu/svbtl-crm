@@ -339,7 +339,8 @@
       "unassignedAuto": "채팅 배정 해제됨"
     },
     "page": {
-      "whatsappNotConnected": "WhatsApp®이 연결되어 있지 않습니다. 설정으로 이동해 계정을 연결하세요."
+      "whatsappNotConnected": "WhatsApp®이 연결되어 있지 않습니다. 설정으로 이동해 계정을 연결하세요.",
+      "contactSheetTitle": "연락처 정보"
     },
     "conversationList": {
       "searchPlaceholder": "대화 검색...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "담당자 변경에 실패했습니다",
       "networkError": "네트워크 오류",
       "documentFallback": "문서",
-      "you": "나"
+      "you": "나",
+      "openContact": "{name} 정보 열기"
     },
     "sessionTimer": {
       "expired": "만료됨",
@@ -455,7 +457,13 @@
       "interactiveShort": "버튼 / 목록",
       "aiDraftShort": "AI 초안",
       "typeMessagePlaceholderShort": "메시지 입력",
-      "enterHint": "Enter로 보내기 · 줄바꿈은 Shift+Enter"
+      "enterHint": "Enter로 보내기 · 줄바꿈은 Shift+Enter",
+      "fillVariablesDesc": "이 메시지에 들어갈 내용을 입력하세요.",
+      "fillVariablesPreview": "미리보기",
+      "fillVariablesCancel": "취소",
+      "fillVariablesUse": "답장 사용",
+      "fillVariablesFirst": "보내기 전에 모든 {example}을 채우세요.",
+      "library": "라이브러리"
     },
     "bubble": {
       "photo": "사진",
@@ -539,7 +547,23 @@
       "deals": "딜",
       "noTags": "태그 없음",
       "noDeals": "딜 없음",
-      "addNotePlaceholder": "메모 추가..."
+      "addNotePlaceholder": "메모 추가...",
+      "editProfile": "프로필 편집",
+      "nameLabel": "이름",
+      "emailLabel": "이메일",
+      "companyLabel": "회사",
+      "phoneReadOnly": "채팅에서는 전화번호를 바꿀 수 없습니다.",
+      "save": "저장",
+      "cancel": "취소",
+      "profileSaved": "프로필을 저장했습니다",
+      "profileSaveFailed": "프로필을 저장하지 못했습니다",
+      "invalidEmail": "올바른 이메일을 입력하세요",
+      "addTag": "태그 추가",
+      "searchTags": "태그 검색",
+      "noMoreTags": "다른 태그가 없습니다",
+      "noTagsDefined": "아직 태그가 없습니다. 관리자가 설정 → 필드 및 태그에서 추가합니다.",
+      "removeTag": "{name} 제거",
+      "tagFailed": "태그를 업데이트하지 못했습니다"
     },
     "aiBanner": {
       "pausedTitle": "이 대화에서 AI 어시스턴트가 일시 중지됨",
@@ -2263,7 +2287,8 @@
       "textPlaceholder": "삽입할 메시지 텍스트",
       "cancel": "취소",
       "save": "저장",
-      "placeholdersHint": "{name} 또는 {firstName}을 쓰면 답장을 넣을 때 고객 이름이 채워집니다."
+      "placeholdersHint": "{name} 또는 {firstName}을 쓰면 답장을 넣을 때 고객 이름이 채워집니다.",
+      "variablesHint": "답장을 쓸 때마다 채울 내용은 {one}, {two}…로 적으세요."
     }
   },
   "SignupPage": {
@@ -2425,7 +2450,16 @@
     "rowDescriptionPlaceholder": "설명 (선택)",
     "addRow": "행 추가",
     "addSection": "섹션 추가",
-    "defaultListButton": "메뉴"
+    "defaultListButton": "메뉴",
+    "headerType": "헤더",
+    "headerTypeText": "텍스트",
+    "headerTypeImage": "이미지",
+    "headerImage": "헤더 이미지",
+    "uploadImage": "업로드",
+    "imageHint": "JPEG 또는 PNG, 최대 5MB. 메시지 위에 표시됩니다.",
+    "imageTypeError": "JPEG 또는 PNG 이미지를 사용하세요.",
+    "imageSizeError": "이미지는 5MB 이하여야 합니다.",
+    "imageUploadError": "이미지를 업로드하지 못했습니다."
   },
   "DashboardShell": {
     "loading": "불러오는 중..."
@@ -2970,5 +3004,20 @@
       "metaApiStatus": "Meta API 오류: {status}",
       "syncFailed": "템플릿을 동기화하지 못했습니다"
     }
+  },
+  "MediaLibrary": {
+    "title": "미디어 라이브러리",
+    "description": "이미 업로드한 파일입니다. 다시 쓸 파일을 고르거나 새로 업로드하세요.",
+    "tabOurs": "우리 파일",
+    "tabReceived": "고객이 보낸 파일",
+    "search": "파일 검색",
+    "upload": "업로드",
+    "button": "라이브러리",
+    "emptyOurs": "아직 업로드한 파일이 없습니다.",
+    "emptyReceived": "아직 고객이 보낸 파일이 없습니다.",
+    "noMatch": "여기에 쓸 수 있는 파일이 없습니다. 헤더 이미지는 5MB 이하의 JPEG 또는 PNG여야 합니다.",
+    "loadMore": "더 보기 ({count}개 남음)",
+    "uploadNotAllowed": "이 파일 형식이나 크기는 여기에 쓸 수 없습니다.",
+    "uploadFailed": "파일을 업로드하지 못했습니다."
   }
 }

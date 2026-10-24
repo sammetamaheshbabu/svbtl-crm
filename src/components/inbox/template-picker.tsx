@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { extractVariableIndices } from "@/lib/whatsapp/template-validators";
 import { useTranslations } from "next-intl";
+import { MediaLibraryButton } from "@/components/media/media-library-dialog";
+import { acceptForHeader } from "@/lib/storage/media-library";
 
 export interface TemplateSendValues {
   body: string[];
@@ -297,13 +299,19 @@ export function TemplatePicker({
                 <Label className="text-xs text-popover-foreground">
                   {t("headerMediaLabel", { type: mediaHeader })}
                 </Label>
-                <Input
-                  type="url"
-                  value={headerMediaUrl}
-                  onChange={(e) => setHeaderMediaUrl(e.target.value)}
-                  placeholder="https://"
-                  className="border-border bg-muted text-foreground placeholder:text-muted-foreground"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    type="url"
+                    value={headerMediaUrl}
+                    onChange={(e) => setHeaderMediaUrl(e.target.value)}
+                    placeholder="https://"
+                    className="min-w-0 flex-1 border-border bg-muted text-foreground placeholder:text-muted-foreground"
+                  />
+                  <MediaLibraryButton
+                    accept={acceptForHeader(mediaHeader)!}
+                    onPick={(file) => setHeaderMediaUrl(file.url)}
+                  />
+                </div>
                 <p className="text-[10px] text-muted-foreground">
                   {headerMediaUrl.trim() && !isHttpUrl(headerMediaUrl.trim())
                     ? t("headerMediaInvalid")

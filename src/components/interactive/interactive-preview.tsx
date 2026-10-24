@@ -44,6 +44,14 @@ export function InteractivePreview({
         className,
       )}
     >
+      {payload.kind === "buttons" && payload.header_image_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={payload.header_image_url}
+          alt=""
+          className="aspect-[1.91/1] w-full bg-muted object-cover"
+        />
+      ) : null}
       <div className="px-3 py-2">
         {payload.header ? (
           <p className="mb-1 break-words text-sm font-semibold">

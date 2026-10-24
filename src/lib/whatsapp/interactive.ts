@@ -36,6 +36,12 @@ export interface InteractiveButtonsPayload {
   body: string
   /** Optional plain-text header (≤ 60 chars). */
   header?: string
+  /**
+   * Optional image shown above the body instead of a text header — a
+   * public https JPEG/PNG link Meta fetches at send time. Reply-button
+   * messages only; list messages take a text header alone.
+   */
+  header_image_url?: string
   /** Optional grey footer line (≤ 60 chars). */
   footer?: string
   /** 1–3 buttons. */
@@ -129,6 +135,15 @@ export function validateInteractivePayload(
   if (!hf.ok) return hf
 
   if (p.kind === 'buttons') {
+    const image = (p as InteractiveButtonsPayload).header_image_url
+    if (image !== undefined && image !== '') {
+      if (typeof image !== 'string' || !/^https:\/\/\S+$/i.test(image)) {
+        return fail('The header image must be an https link.')
+      }
+      if (p.header) {
+        return fail('Use either a text header or an image header, not both.')
+      }
+    }
     const buttons = (p as InteractiveButtonsPayload).buttons
     if (!Array.isArray(buttons) || buttons.length < 1) {
       return fail('Add at least one reply button.')

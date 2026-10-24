@@ -23,6 +23,7 @@ import {
   Plus,
   MessageSquareDashed,
   Zap,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
@@ -62,7 +63,19 @@ import {
 import { validateInteractivePayload } from "@/lib/whatsapp/interactive";
 import type { InteractiveMessagePayload, QuickReply } from "@/types";
 import { QuickReplyPicker } from "./quick-reply-picker";
-import { fillPlaceholders } from "@/lib/quick-replies/placeholders";
+import {
+  fillNumbered,
+  fillPlaceholders,
+  hasUnfilledVariables,
+  numberedVariables,
+} from "@/lib/quick-replies/placeholders";
+import { mapPayloadText, payloadTexts } from "@/lib/quick-replies/fill-payload";
+import { QuickReplyFillDialog } from "./quick-reply-fill-dialog";
+import { MediaLibraryDialog } from "@/components/media/media-library-dialog";
+import type { LibraryAccept, LibraryFile } from "@/lib/storage/media-library";
+
+/** Anything the composer can send as an attachment. */
+const ATTACHMENT_ACCEPT: LibraryAccept = { kinds: ["image", "video", "document", "audio"] };
 
 /** Media content types an agent can send from the composer. */
 export type ComposerMediaKind = "image" | "video" | "document" | "audio";
@@ -81,8 +94,11 @@ export interface SendMediaPayload {
   kind: ComposerMediaKind;
   /** Public chat-media URL Meta fetches at send time. */
   mediaUrl: string;
-  /** Storage object path — lets the caller GC the object if the send fails. */
-  path: string;
+  /**
+   * Storage object path of a one-off upload — lets the caller GC it if the
+   * send fails. Absent for a Media Library file, which must never be deleted.
+   */
+  path?: string;
   /** Optional caption (image/video/document only). */
   caption?: string;
   /** Original file name — surfaced to the recipient for documents. */
@@ -111,8 +127,9 @@ const PICKER_ACCEPT: Record<"image" | "video" | "document", string> = {
 interface MediaDraft {
   kind: ComposerMediaKind;
   mediaUrl: string;
-  /** Storage path — used to GC the object if the draft is discarded. */
-  path: string;
+  /** Storage path of a one-off upload, GC'd if the draft is discarded.
+   *  Absent for a Media Library file (shared, never deleted). */
+  path?: string;
   filename: string;
   caption: string;
 }
@@ -186,6 +203,13 @@ export function MessageComposer({
   // Narrow composer: every action lives in one sheet, so the message box
   // keeps the whole row.
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  // A picked quick reply with {{1}}, {{2}}… waiting for its values.
+  const [pendingFill, setPendingFill] = useState<{
+    qr: QuickReply;
+    fromSlash: boolean;
+    numbers: number[];
+  } | null>(null);
   // "/" at the start of the message lists quick replies by title. Reloaded
   // each time the list opens, so replies added in Settings show up; Esc
   // hides it until the text changes.
@@ -299,6 +323,10 @@ export function MessageComposer({
   const handleSend = useCallback(async () => {
     const trimmed = text.trim();
     if (!trimmed || sending || sessionExpired) return;
+    if (hasUnfilledVariables(trimmed)) {
+      toast.error(t("fillVariablesFirst", { example: "{{n}}" }));
+      return;
+    }
 
     setSending(true);
     try {
@@ -310,7 +338,7 @@ export function MessageComposer({
     } finally {
       setSending(false);
     }
-  }, [text, sending, sessionExpired, onSend, replyTo?.id]);
+  }, [text, sending, sessionExpired, onSend, replyTo?.id, t]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -391,10 +419,14 @@ export function MessageComposer({
       toast.error(result.error);
       return;
     }
+    if (payloadTexts(interactivePayload).some(hasUnfilledVariables)) {
+      toast.error(t("fillVariablesFirst", { example: "{{n}}" }));
+      return;
+    }
     onSendInteractive(interactivePayload, replyTo?.id);
     setInteractiveOpen(false);
     onClearReply?.();
-  }, [interactivePayload, onSendInteractive, replyTo?.id, onClearReply]);
+  }, [interactivePayload, onSendInteractive, replyTo?.id, onClearReply, t]);
 
   // Persist the current builder payload as a reusable interactive snippet.
   const saveAsQuickReply = useCallback(async () => {
@@ -434,15 +466,16 @@ export function MessageComposer({
   // A picked quick reply: text fills the composer; interactive opens the
   // builder pre-filled so the agent can tweak before sending.
   // From the "/" list, the reply replaces the typed "/search".
-  const handlePickQuickReply = useCallback(
-    (qr: QuickReply, fromSlash = false) => {
-      setQuickReplyOpen(false);
+  const insertQuickReply = useCallback(
+    (qr: QuickReply, fromSlash: boolean, values: Record<number, string>) => {
+      const fill = (text: string) =>
+        fillNumbered(fillPlaceholders(text, { name: contactName }), values);
       if (qr.kind === "interactive" && qr.interactive_payload) {
         if (fromSlash) setText("");
-        openInteractiveBuilder(qr.interactive_payload);
+        openInteractiveBuilder(mapPayloadText(qr.interactive_payload, fill));
         return;
       }
-      const body = fillPlaceholders(qr.content_text ?? "", { name: contactName });
+      const body = fill(qr.content_text ?? "");
       // Separate the snippet from any existing draft with a newline so the
       // words don't run together ("Thanks" + "we'll…" → "Thankswe'll…").
       setText((prev) =>
@@ -462,6 +495,23 @@ export function MessageComposer({
       });
     },
     [openInteractiveBuilder, adjustHeight, contactName],
+  );
+
+  const handlePickQuickReply = useCallback(
+    (qr: QuickReply, fromSlash = false) => {
+      setQuickReplyOpen(false);
+      const texts =
+        qr.kind === "interactive" && qr.interactive_payload
+          ? payloadTexts(qr.interactive_payload)
+          : [qr.content_text ?? ""];
+      const numbers = numberedVariables(...texts);
+      if (numbers.length > 0) {
+        setPendingFill({ qr, fromSlash, numbers });
+        return;
+      }
+      insertQuickReply(qr, fromSlash, {});
+    },
+    [insertQuickReply],
   );
 
   // Arrow keys move through the "/" list, Enter or Tab inserts, Esc closes.
@@ -522,6 +572,14 @@ export function MessageComposer({
       }
     },
     [removeStaged, t],
+  );
+
+  const pickFromLibrary = useCallback(
+    (file: LibraryFile) => {
+      removeStaged(draftRef.current?.path);
+      setDraft({ kind: file.kind, mediaUrl: file.url, filename: file.name, caption: "" });
+    },
+    [removeStaged],
   );
 
   const handlePicked = useCallback(
@@ -845,6 +903,10 @@ export function MessageComposer({
                 <Mic className="mr-2 h-4 w-4" />
                 {t("voiceNote")}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLibraryOpen(true)}>
+                <Library className="mr-2 h-4 w-4" />
+                {t("library")}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1008,6 +1070,14 @@ export function MessageComposer({
                 run: () => void startRecording(),
               },
               {
+                key: "library",
+                icon: Library,
+                label: t("library"),
+                tone: "bg-orange-500/15 text-orange-500",
+                disabled: inputsDisabled || busy,
+                run: () => setLibraryOpen(true),
+              },
+              {
                 key: "quick",
                 icon: Zap,
                 label: t("quickReplies"),
@@ -1074,6 +1144,7 @@ export function MessageComposer({
             <InteractiveBuilder
               value={interactivePayload}
               onChange={setInteractivePayload}
+              allowImageHeader
             />
           </div>
           <DialogFooter>
@@ -1098,6 +1169,34 @@ export function MessageComposer({
       </Dialog>
 
       {/* Quick-reply picker. */}
+      <MediaLibraryDialog
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        accept={ATTACHMENT_ACCEPT}
+        onPick={pickFromLibrary}
+      />
+
+      {pendingFill && (
+        <QuickReplyFillDialog
+          title={pendingFill.qr.title}
+          numbers={pendingFill.numbers}
+          preview={(values) => {
+            const fill = (text: string) =>
+              fillNumbered(fillPlaceholders(text, { name: contactName }), values);
+            const qr = pendingFill.qr;
+            return qr.kind === "interactive" && qr.interactive_payload
+              ? fill(qr.interactive_payload.body)
+              : fill(qr.content_text ?? "");
+          }}
+          onCancel={() => setPendingFill(null)}
+          onConfirm={(values) => {
+            const { qr, fromSlash } = pendingFill;
+            setPendingFill(null);
+            insertQuickReply(qr, fromSlash, values);
+          }}
+        />
+      )}
+
       <QuickReplyPicker
         open={quickReplyOpen}
         onOpenChange={setQuickReplyOpen}

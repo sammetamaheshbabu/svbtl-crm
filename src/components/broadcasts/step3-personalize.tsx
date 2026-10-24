@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, ArrowRight, Eye, ImageIcon, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { MediaLibraryButton } from '@/components/media/media-library-dialog';
+import { acceptForHeader } from '@/lib/storage/media-library';
 
 type VariableType = 'static' | 'field' | 'custom_field';
 
@@ -259,13 +261,19 @@ export function Step3Personalize({
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
             {t('personalize.imageUrl')}
           </label>
-          <Input
-            type="url"
-            value={headerMediaUrl}
-            onChange={(e) => onHeaderMediaUrlChange(e.target.value)}
-            placeholder={t('personalize.imageUrlPlaceholder')}
-            className="border-border bg-muted text-foreground placeholder:text-muted-foreground"
-          />
+          <div className="flex gap-2">
+            <Input
+              type="url"
+              value={headerMediaUrl}
+              onChange={(e) => onHeaderMediaUrlChange(e.target.value)}
+              placeholder={t('personalize.imageUrlPlaceholder')}
+              className="min-w-0 flex-1 border-border bg-muted text-foreground placeholder:text-muted-foreground"
+            />
+            <MediaLibraryButton
+              accept={acceptForHeader(mediaHeaderType)!}
+              onPick={(file) => onHeaderMediaUrlChange(file.url)}
+            />
+          </div>
           <p className="mt-1.5 text-xs text-muted-foreground">
             {t('personalize.headerImageDesc')}
           </p>

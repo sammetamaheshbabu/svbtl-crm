@@ -339,7 +339,8 @@
       "unassignedAuto": "Chat unassigned"
     },
     "page": {
-      "whatsappNotConnected": "WhatsApp® is not connected. Go to Settings to connect your account."
+      "whatsappNotConnected": "WhatsApp® is not connected. Go to Settings to connect your account.",
+      "contactSheetTitle": "Contact details"
     },
     "conversationList": {
       "searchPlaceholder": "Search conversations...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "Failed to update assignment",
       "networkError": "network error",
       "documentFallback": "Document",
-      "you": "You"
+      "you": "You",
+      "openContact": "Open {name}'s details"
     },
     "sessionTimer": {
       "expired": "Expired",
@@ -455,7 +457,13 @@
       "interactiveShort": "Buttons / list",
       "aiDraftShort": "AI draft",
       "typeMessagePlaceholderShort": "Type a message",
-      "enterHint": "Enter to send · Shift+Enter for a new line"
+      "enterHint": "Enter to send · Shift+Enter for a new line",
+      "fillVariablesDesc": "Fill in the details for this message.",
+      "fillVariablesPreview": "Preview",
+      "fillVariablesCancel": "Cancel",
+      "fillVariablesUse": "Use reply",
+      "fillVariablesFirst": "Fill in every {example} before sending.",
+      "library": "Library"
     },
     "bubble": {
       "photo": "Photo",
@@ -539,7 +547,23 @@
       "deals": "Deals",
       "noTags": "No tags",
       "noDeals": "No deals",
-      "addNotePlaceholder": "Add a note..."
+      "addNotePlaceholder": "Add a note...",
+      "editProfile": "Edit profile",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "companyLabel": "Company",
+      "phoneReadOnly": "The phone number can't be changed from a chat.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "profileSaved": "Profile saved",
+      "profileSaveFailed": "Couldn't save the profile",
+      "invalidEmail": "Enter a valid email address",
+      "addTag": "Add tag",
+      "searchTags": "Search tags",
+      "noMoreTags": "No other tags",
+      "noTagsDefined": "No tags yet. Admins add them in Settings → Fields & tags.",
+      "removeTag": "Remove {name}",
+      "tagFailed": "Couldn't update the tags"
     },
     "aiBanner": {
       "pausedTitle": "AI assistant is paused here",
@@ -2263,7 +2287,8 @@
       "textPlaceholder": "The message text to insert",
       "cancel": "Cancel",
       "save": "Save",
-      "placeholdersHint": "Write {name} or {firstName} and the customer's name is filled in when the reply is inserted."
+      "placeholdersHint": "Write {name} or {firstName} and the customer's name is filled in when the reply is inserted.",
+      "variablesHint": "Write {one}, {two}… for details you fill in each time you use the reply."
     }
   },
   "SignupPage": {
@@ -2425,7 +2450,16 @@
     "rowDescriptionPlaceholder": "Description (optional)",
     "addRow": "Add row",
     "addSection": "Add section",
-    "defaultListButton": "Menu"
+    "defaultListButton": "Menu",
+    "headerType": "Header",
+    "headerTypeText": "Text",
+    "headerTypeImage": "Image",
+    "headerImage": "Header image",
+    "uploadImage": "Upload",
+    "imageHint": "JPEG or PNG, up to 5 MB. Shown above the message.",
+    "imageTypeError": "Use a JPEG or PNG image.",
+    "imageSizeError": "The image must be 5 MB or smaller.",
+    "imageUploadError": "Couldn't upload the image."
   },
   "DashboardShell": {
     "loading": "Loading..."
@@ -2970,5 +3004,20 @@
       "metaApiStatus": "Meta API error: {status}",
       "syncFailed": "Failed to sync templates"
     }
+  },
+  "MediaLibrary": {
+    "title": "Media library",
+    "description": "Files already uploaded. Pick one to use it again, or upload a new one.",
+    "tabOurs": "Our files",
+    "tabReceived": "Received from customers",
+    "search": "Search files",
+    "upload": "Upload",
+    "button": "Library",
+    "emptyOurs": "No files uploaded yet.",
+    "emptyReceived": "No files received from customers yet.",
+    "noMatch": "No files fit here. Images for headers must be JPEG or PNG up to 5 MB.",
+    "loadMore": "Load more ({count} left)",
+    "uploadNotAllowed": "This file type or size can't be used here.",
+    "uploadFailed": "Couldn't upload the file."
   }
 }

@@ -339,7 +339,8 @@
       "unassignedAuto": "Chat sin asignar"
     },
     "page": {
-      "whatsappNotConnected": "WhatsApp® no está conectado. Ve a Configuración para conectar tu cuenta."
+      "whatsappNotConnected": "WhatsApp® no está conectado. Ve a Configuración para conectar tu cuenta.",
+      "contactSheetTitle": "Datos del contacto"
     },
     "conversationList": {
       "searchPlaceholder": "Buscar conversaciones...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "Error al actualizar la asignación",
       "networkError": "error de red",
       "documentFallback": "Documento",
-      "you": "Tú"
+      "you": "Tú",
+      "openContact": "Abrir los datos de {name}"
     },
     "sessionTimer": {
       "expired": "Expirada",
@@ -455,7 +457,13 @@
       "interactiveShort": "Botones / lista",
       "aiDraftShort": "Borrador IA",
       "typeMessagePlaceholderShort": "Escribe un mensaje",
-      "enterHint": "Enter para enviar · Shift+Enter para nueva línea"
+      "enterHint": "Enter para enviar · Shift+Enter para nueva línea",
+      "fillVariablesDesc": "Completa los datos de este mensaje.",
+      "fillVariablesPreview": "Vista previa",
+      "fillVariablesCancel": "Cancelar",
+      "fillVariablesUse": "Usar respuesta",
+      "fillVariablesFirst": "Completa cada {example} antes de enviar.",
+      "library": "Biblioteca"
     },
     "bubble": {
       "photo": "Foto",
@@ -539,7 +547,23 @@
       "deals": "Negocios",
       "noTags": "Sin etiquetas",
       "noDeals": "Sin negocios",
-      "addNotePlaceholder": "Agregar una nota..."
+      "addNotePlaceholder": "Agregar una nota...",
+      "editProfile": "Editar perfil",
+      "nameLabel": "Nombre",
+      "emailLabel": "Correo",
+      "companyLabel": "Empresa",
+      "phoneReadOnly": "El número de teléfono no se puede cambiar desde un chat.",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "profileSaved": "Perfil guardado",
+      "profileSaveFailed": "No se pudo guardar el perfil",
+      "invalidEmail": "Introduce un correo válido",
+      "addTag": "Añadir etiqueta",
+      "searchTags": "Buscar etiquetas",
+      "noMoreTags": "No hay más etiquetas",
+      "noTagsDefined": "Aún no hay etiquetas. Los administradores las crean en Configuración → Campos y etiquetas.",
+      "removeTag": "Quitar {name}",
+      "tagFailed": "No se pudieron actualizar las etiquetas"
     },
     "aiBanner": {
       "pausedTitle": "El asistente de IA está en pausa aquí",
@@ -2263,7 +2287,8 @@
       "textPlaceholder": "El texto del mensaje que se insertará",
       "cancel": "Cancelar",
       "save": "Guardar",
-      "placeholdersHint": "Escribe {name} o {firstName} y se completará con el nombre del cliente al insertar la respuesta."
+      "placeholdersHint": "Escribe {name} o {firstName} y se completará con el nombre del cliente al insertar la respuesta.",
+      "variablesHint": "Escribe {one}, {two}… para datos que completas cada vez que usas la respuesta."
     }
   },
   "SignupPage": {
@@ -2425,7 +2450,16 @@
     "rowDescriptionPlaceholder": "Descripción (opcional)",
     "addRow": "Agregar fila",
     "addSection": "Agregar sección",
-    "defaultListButton": "Menú"
+    "defaultListButton": "Menú",
+    "headerType": "Encabezado",
+    "headerTypeText": "Texto",
+    "headerTypeImage": "Imagen",
+    "headerImage": "Imagen del encabezado",
+    "uploadImage": "Subir",
+    "imageHint": "JPEG o PNG, hasta 5 MB. Se muestra encima del mensaje.",
+    "imageTypeError": "Usa una imagen JPEG o PNG.",
+    "imageSizeError": "La imagen debe pesar 5 MB o menos.",
+    "imageUploadError": "No se pudo subir la imagen."
   },
   "DashboardShell": {
     "loading": "Cargando..."
@@ -2970,5 +3004,20 @@
       "metaApiStatus": "Error de la API de Meta: {status}",
       "syncFailed": "Error al sincronizar las plantillas"
     }
+  },
+  "MediaLibrary": {
+    "title": "Biblioteca de archivos",
+    "description": "Archivos ya subidos. Elige uno para volver a usarlo o sube uno nuevo.",
+    "tabOurs": "Nuestros archivos",
+    "tabReceived": "Recibidos de clientes",
+    "search": "Buscar archivos",
+    "upload": "Subir",
+    "button": "Biblioteca",
+    "emptyOurs": "Aún no hay archivos subidos.",
+    "emptyReceived": "Aún no hay archivos de clientes.",
+    "noMatch": "Ningún archivo sirve aquí. Las imágenes de encabezado deben ser JPEG o PNG de hasta 5 MB.",
+    "loadMore": "Cargar más ({count} restantes)",
+    "uploadNotAllowed": "Este tipo o tamaño de archivo no se puede usar aquí.",
+    "uploadFailed": "No se pudo subir el archivo."
   }
 }

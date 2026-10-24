@@ -339,7 +339,8 @@
       "unassignedAuto": "Conversa sem atribuição"
     },
     "page": {
-      "whatsappNotConnected": "O WhatsApp® não está conectado. Vá em Configurações para conectar sua conta."
+      "whatsappNotConnected": "O WhatsApp® não está conectado. Vá em Configurações para conectar sua conta.",
+      "contactSheetTitle": "Dados do contato"
     },
     "conversationList": {
       "searchPlaceholder": "Buscar conversas...",
@@ -395,7 +396,8 @@
       "assignmentUpdateFailed": "Falha ao atualizar a atribuição",
       "networkError": "erro de rede",
       "documentFallback": "Documento",
-      "you": "Você"
+      "you": "Você",
+      "openContact": "Abrir os dados de {name}"
     },
     "sessionTimer": {
       "expired": "Expirada",
@@ -455,7 +457,13 @@
       "interactiveShort": "Botões / lista",
       "aiDraftShort": "Rascunho IA",
       "typeMessagePlaceholderShort": "Digite uma mensagem",
-      "enterHint": "Enter para enviar · Shift+Enter para nova linha"
+      "enterHint": "Enter para enviar · Shift+Enter para nova linha",
+      "fillVariablesDesc": "Preencha os dados desta mensagem.",
+      "fillVariablesPreview": "Prévia",
+      "fillVariablesCancel": "Cancelar",
+      "fillVariablesUse": "Usar resposta",
+      "fillVariablesFirst": "Preencha cada {example} antes de enviar.",
+      "library": "Biblioteca"
     },
     "bubble": {
       "photo": "Foto",
@@ -539,7 +547,23 @@
       "deals": "Negócios",
       "noTags": "Sem tags",
       "noDeals": "Sem negócios",
-      "addNotePlaceholder": "Adicionar uma nota..."
+      "addNotePlaceholder": "Adicionar uma nota...",
+      "editProfile": "Editar perfil",
+      "nameLabel": "Nome",
+      "emailLabel": "E-mail",
+      "companyLabel": "Empresa",
+      "phoneReadOnly": "O número de telefone não pode ser alterado em uma conversa.",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "profileSaved": "Perfil salvo",
+      "profileSaveFailed": "Não foi possível salvar o perfil",
+      "invalidEmail": "Informe um e-mail válido",
+      "addTag": "Adicionar tag",
+      "searchTags": "Buscar tags",
+      "noMoreTags": "Nenhuma outra tag",
+      "noTagsDefined": "Ainda não há tags. Administradores as criam em Configurações → Campos e tags.",
+      "removeTag": "Remover {name}",
+      "tagFailed": "Não foi possível atualizar as tags"
     },
     "aiBanner": {
       "pausedTitle": "O assistente de IA está pausado aqui",
@@ -2263,7 +2287,8 @@
       "textPlaceholder": "O texto da mensagem a inserir",
       "cancel": "Cancelar",
       "save": "Salvar",
-      "placeholdersHint": "Escreva {name} ou {firstName} e o nome do cliente é preenchido ao inserir a resposta."
+      "placeholdersHint": "Escreva {name} ou {firstName} e o nome do cliente é preenchido ao inserir a resposta.",
+      "variablesHint": "Escreva {one}, {two}… para dados que você preenche cada vez que usa a resposta."
     }
   },
   "SignupPage": {
@@ -2425,7 +2450,16 @@
     "rowDescriptionPlaceholder": "Descrição (opcional)",
     "addRow": "Adicionar linha",
     "addSection": "Adicionar seção",
-    "defaultListButton": "Menu"
+    "defaultListButton": "Menu",
+    "headerType": "Cabeçalho",
+    "headerTypeText": "Texto",
+    "headerTypeImage": "Imagem",
+    "headerImage": "Imagem do cabeçalho",
+    "uploadImage": "Enviar",
+    "imageHint": "JPEG ou PNG, até 5 MB. Aparece acima da mensagem.",
+    "imageTypeError": "Use uma imagem JPEG ou PNG.",
+    "imageSizeError": "A imagem deve ter no máximo 5 MB.",
+    "imageUploadError": "Não foi possível enviar a imagem."
   },
   "DashboardShell": {
     "loading": "Carregando..."
@@ -2970,5 +3004,20 @@
       "metaApiStatus": "Erro da API da Meta: {status}",
       "syncFailed": "Falha ao sincronizar os modelos"
     }
+  },
+  "MediaLibrary": {
+    "title": "Biblioteca de arquivos",
+    "description": "Arquivos já enviados. Escolha um para usar de novo ou envie um novo.",
+    "tabOurs": "Nossos arquivos",
+    "tabReceived": "Recebidos de clientes",
+    "search": "Buscar arquivos",
+    "upload": "Enviar",
+    "button": "Biblioteca",
+    "emptyOurs": "Nenhum arquivo enviado ainda.",
+    "emptyReceived": "Nenhum arquivo de clientes ainda.",
+    "noMatch": "Nenhum arquivo serve aqui. Imagens de cabeçalho devem ser JPEG ou PNG de até 5 MB.",
+    "loadMore": "Carregar mais ({count} restantes)",
+    "uploadNotAllowed": "Este tipo ou tamanho de arquivo não pode ser usado aqui.",
+    "uploadFailed": "Não foi possível enviar o arquivo."
   }
 }

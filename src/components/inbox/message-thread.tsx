@@ -132,6 +132,8 @@ interface MessageThreadProps {
    */
   contactPanelOpen?: boolean;
   onToggleContactPanel?: () => void;
+  /** Tapping the customer's name or avatar opens their contact details. */
+  onOpenContact?: () => void;
 }
 
 function formatDateSeparator(dateStr: string, t: ReturnType<typeof useTranslations>): string {
@@ -191,6 +193,7 @@ export function MessageThread({
   onRefresh,
   contactPanelOpen,
   onToggleContactPanel,
+  onOpenContact,
 }: MessageThreadProps) {
   const t = useTranslations("Inbox.messageThread");
   const tTimer = useTranslations("Inbox.sessionTimer");
@@ -731,7 +734,10 @@ export function MessageThread({
           onUpdateMessage(tempId, { status: "failed" });
           // The upload never reached the recipient — GC the orphaned
           // object rather than leaving it in the public bucket forever.
-          void deleteAccountMedia(CHAT_MEDIA_BUCKET, payload.path).catch(() => {});
+          // A Media Library file has no path: it's shared, never deleted.
+          if (payload.path) {
+            void deleteAccountMedia(CHAT_MEDIA_BUCKET, payload.path).catch(() => {});
+          }
           return;
         }
 
@@ -742,7 +748,9 @@ export function MessageThread({
         const reason = err instanceof Error ? err.message : t("networkError");
         toast.error(t("sendFailed", { reason }));
         onUpdateMessage(tempId, { status: "failed" });
-        void deleteAccountMedia(CHAT_MEDIA_BUCKET, payload.path).catch(() => {});
+        if (payload.path) {
+          void deleteAccountMedia(CHAT_MEDIA_BUCKET, payload.path).catch(() => {});
+        }
       }
     },
     [conversation, onNewMessage, onUpdateMessage, noteClaim, t],
@@ -1092,15 +1100,23 @@ export function MessageThread({
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
-            {displayName.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-            <p className="truncate text-xs text-muted-foreground">
-              {contactHandle(contact)}
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={onOpenContact}
+            disabled={!onOpenContact}
+            aria-label={t("openContact", { name: displayName })}
+            className="flex min-w-0 items-center gap-2 rounded-lg text-left disabled:cursor-default sm:gap-3 enabled:hover:opacity-80"
+          >
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
+              <p className="truncate text-xs text-muted-foreground">
+                {contactHandle(contact)}
+              </p>
+            </div>
+          </button>
           {/* Session timer badge — hidden on the narrowest phones so
               the name + back arrow keep their room. */}
           <Badge
@@ -1131,7 +1147,7 @@ export function MessageThread({
               title={contactPanelOpen ? t("hideContact") : t("showContact")}
               aria-pressed={contactPanelOpen}
               className={cn(
-                "hidden h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-muted hover:text-foreground lg:inline-flex",
+                "hidden h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-muted hover:text-foreground xl:inline-flex",
                 contactPanelOpen ? "text-primary" : "text-muted-foreground",
               )}
             >

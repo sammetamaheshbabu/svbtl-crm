@@ -14,6 +14,12 @@ import { ConversationList } from "@/components/inbox/conversation-list";
 import { parseInboxFilter } from "@/lib/inbox/inbox-filters";
 import { MessageThread } from "@/components/inbox/message-thread";
 import { ContactSidebar } from "@/components/inbox/contact-sidebar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { NewChatDialog } from "@/components/inbox/new-chat-dialog";
 import { useCan } from "@/hooks/use-can";
 import { toast } from "sonner";
@@ -80,6 +86,8 @@ function InboxPageInner() {
    * below reconciles to the stored value right after mount instead.
    */
   const [contactPanelOpen, setContactPanelOpen] = useState(true);
+  // Phones and tablets: the contact panel opens as a sheet from the bottom.
+  const [contactSheetOpen, setContactSheetOpen] = useState(false);
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CONTACT_PANEL_STORAGE_KEY);
@@ -87,6 +95,37 @@ function InboxPageInner() {
     } catch {
       // localStorage can throw in private-browsing / sandboxed contexts.
     }
+  }, []);
+
+  // The customer's name in the chat header: on desktop it opens the
+  // panel if it's hidden; below xl it opens the contact sheet.
+  const handleOpenContact = useCallback(() => {
+    if (window.matchMedia("(min-width: 80rem)").matches) {
+      if (contactPanelOpen) return;
+      setContactPanelOpen(true);
+      try {
+        localStorage.setItem(CONTACT_PANEL_STORAGE_KEY, "true");
+      } catch {
+        // Persistence is best-effort; ignore storage failures.
+      }
+      return;
+    }
+    setContactSheetOpen(true);
+  }, [contactPanelOpen]);
+
+  // A profile edit from the panel: show the new name everywhere at once.
+  const handleContactUpdated = useCallback((updated: Contact) => {
+    setActiveContact((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
+    setActiveConversation((prev) =>
+      prev && prev.contact?.id === updated.id
+        ? { ...prev, contact: { ...prev.contact, ...updated } }
+        : prev,
+    );
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.contact?.id === updated.id ? { ...c, contact: { ...c.contact, ...updated } } : c,
+      ),
+    );
   }, []);
 
   const handleToggleContactPanel = useCallback(() => {
@@ -658,19 +697,42 @@ function InboxPageInner() {
             onRefresh={handleManualRefresh}
             contactPanelOpen={contactPanelOpen}
             onToggleContactPanel={handleToggleContactPanel}
+            onOpenContact={handleOpenContact}
           />
         </div>
 
         {/* Right panel: Contact sidebar — desktop only, and only when the
             agent hasn't collapsed it via the thread-header toggle (#258).
-            On mobile it's always hidden (the `lg:block` below), so the
+            Below xl it's hidden (the `xl:block` below) and opens as a sheet; the
             toggle — which is itself desktop-only — never affects it. */}
         {contactPanelOpen && (
-          <div className="hidden lg:block">
-            <ContactSidebar contact={activeContact} />
+          // xl, not lg: between 1024 and 1279px the panel squeezed the chat
+          // to ~190px, so there it opens as a sheet instead.
+          <div className="hidden xl:block">
+            <ContactSidebar contact={activeContact} onContactUpdated={handleContactUpdated} />
           </div>
         )}
       </div>
+
+      {/* Below xl the contact panel has no room beside the thread; tapping
+          the customer's name opens it here instead. */}
+      <Sheet open={contactSheetOpen} onOpenChange={setContactSheetOpen}>
+        <SheetContent
+          side="bottom"
+          className="h-[85dvh] gap-0 rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] xl:hidden"
+        >
+          <SheetHeader className="border-b border-border pb-3">
+            <SheetTitle>{t("contactSheetTitle")}</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1">
+            <ContactSidebar
+              contact={activeContact}
+              onContactUpdated={handleContactUpdated}
+              variant="sheet"
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <NewChatDialog
         open={newChatOpen}

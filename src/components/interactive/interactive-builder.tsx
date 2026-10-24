@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { ImageIcon, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,9 @@ import {
   type InteractiveMessagePayload,
 } from "@/lib/whatsapp/interactive";
 import { InteractivePreview } from "./interactive-preview";
+import { uploadAccountMedia, MEDIA_MAX_BYTES_BY_KIND } from "@/lib/storage/upload-media";
+import { MediaLibraryButton } from "@/components/media/media-library-dialog";
+import { acceptForHeader } from "@/lib/storage/media-library";
 
 // ------------------------------------------------------------
 // Blank payload factories — used to seed a fresh builder and to
@@ -59,6 +62,11 @@ interface InteractiveBuilderProps {
   onChange: (payload: InteractiveMessagePayload) => void;
   /** Show the live WhatsApp-style preview beside the form. Default true. */
   showPreview?: boolean;
+  /**
+   * Offer an image header on reply-button messages. Only the inbox send
+   * path sends it, so automations and flows leave this off.
+   */
+  allowImageHeader?: boolean;
 }
 
 /**
@@ -72,9 +80,47 @@ export function InteractiveBuilder({
   value,
   onChange,
   showPreview = true,
+  allowImageHeader = false,
 }: InteractiveBuilderProps) {
   const t = useTranslations("Interactive");
   const [advanced, setAdvanced] = useState(false);
+  const imageHeaderOn = allowImageHeader && value.kind === "buttons";
+  const [pickedMode, setHeaderMode] = useState<"text" | "image">("text");
+  // A payload that carries an image (a picked quick reply) shows as such.
+  const headerMode =
+    value.kind === "buttons" && value.header_image_url ? "image" : pickedMode;
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pickHeaderMode = (mode: "text" | "image") => {
+    setHeaderMode(mode);
+    // One header at a time: Meta takes either text or an image.
+    if (mode === "text") setField({ header_image_url: undefined } as Partial<InteractiveButtonsPayload>);
+    else setField({ header: undefined });
+  };
+
+  const uploadHeaderImage = async (file: File | undefined) => {
+    if (!file) return;
+    setUploadError(null);
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setUploadError(t("imageTypeError"));
+      return;
+    }
+    if (file.size > MEDIA_MAX_BYTES_BY_KIND.image) {
+      setUploadError(t("imageSizeError"));
+      return;
+    }
+    setUploading(true);
+    try {
+      const { publicUrl } = await uploadAccountMedia("chat-media", file);
+      setField({ header_image_url: publicUrl, header: undefined } as Partial<InteractiveButtonsPayload>);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : t("imageUploadError"));
+    } finally {
+      setUploading(false);
+    }
+  };
   const validation = validateInteractivePayload(value);
 
   const setField = (patch: Partial<InteractiveMessagePayload>) =>
@@ -125,18 +171,85 @@ export function InteractiveBuilder({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-2">
-            <Field
-              label={t("header")}
-              counter={`${(value.header ?? "").length}/${INTERACTIVE_LIMITS.headerTextMaxLength}`}
-            >
-              <Input
-                value={value.header ?? ""}
-                maxLength={INTERACTIVE_LIMITS.headerTextMaxLength}
-                onChange={(e) => setField({ header: e.target.value })}
-                className="bg-muted text-foreground"
+          {imageHeaderOn && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">{t("headerType")}</span>
+              <KindButton
+                active={headerMode === "text"}
+                label={t("headerTypeText")}
+                onClick={() => pickHeaderMode("text")}
               />
+              <KindButton
+                active={headerMode === "image"}
+                label={t("headerTypeImage")}
+                onClick={() => pickHeaderMode("image")}
+              />
+            </div>
+          )}
+
+          {imageHeaderOn && headerMode === "image" && value.kind === "buttons" && (
+            <Field label={t("headerImage")}>
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  value={value.header_image_url ?? ""}
+                  onChange={(e) =>
+                    setField({ header_image_url: e.target.value.trim() || undefined } as Partial<InteractiveButtonsPayload>)
+                  }
+                  placeholder="https://"
+                  className="min-w-0 flex-1 bg-muted text-foreground"
+                />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  className="hidden"
+                  onChange={(e) => {
+                    void uploadHeaderImage(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileRef.current?.click()}
+                  className="h-9 shrink-0"
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {t("uploadImage")}
+                </Button>
+                <MediaLibraryButton
+                  accept={acceptForHeader("image")!}
+                  onPick={(file) =>
+                    setField({ header_image_url: file.url, header: undefined } as Partial<InteractiveButtonsPayload>)
+                  }
+                />
+              </div>
+              <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <ImageIcon className="h-3 w-3" />
+                {uploadError ?? t("imageHint")}
+              </p>
             </Field>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            {imageHeaderOn && headerMode === "image" ? (
+              <div />
+            ) : (
+              <Field
+                label={t("header")}
+                counter={`${(value.header ?? "").length}/${INTERACTIVE_LIMITS.headerTextMaxLength}`}
+              >
+                <Input
+                  value={value.header ?? ""}
+                  maxLength={INTERACTIVE_LIMITS.headerTextMaxLength}
+                  onChange={(e) => setField({ header: e.target.value })}
+                  className="bg-muted text-foreground"
+                />
+              </Field>
+            )}
             <Field
               label={t("footer")}
               counter={`${(value.footer ?? "").length}/${INTERACTIVE_LIMITS.footerMaxLength}`}

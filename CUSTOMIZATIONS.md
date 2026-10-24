@@ -30,17 +30,17 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (61, not counting this file; section letter in brackets):
+Files we changed vs upstream (76, not counting this file; section letter in brackets):
 
 ```
 .gitignore                                                    [E]
 docs/security-and-backup.md                                   [E]
-messages/en.json                                              [A, I, J, K, L]
-messages/es.json, ko.json, pt.json                            [I, J, K, L]
+messages/en.json                                              [A, I, J, K, L, N, O, P]
+messages/es.json, ko.json, pt.json                            [I, J, K, L, N, O, P]
 src/app/(auth)/login/page.tsx                                 [B, L]
 src/app/(auth)/reset-password/page.tsx                        [L]
 src/app/(auth)/signup/page.tsx                                [B, L]
-src/app/(dashboard)/inbox/page.tsx                            [J]
+src/app/(dashboard)/inbox/page.tsx                            [J, N]
 src/app/(dashboard)/settings/page.tsx                         [C]
 src/app/layout.tsx                                            [A]
 src/app/api/conversations/[conversationId]/assign/route.ts    [I]  new
@@ -52,29 +52,40 @@ src/app/api/v1/members/route.ts                               [I]  new
 src/app/api/v1/messages/route.ts                              [G, H, J]
 src/app/api/v1/quick-replies/route.ts (+ route.test.ts)       [K]  new
 src/app/api/whatsapp/send/route.ts (+ route.test.ts)          [G, H, I, J]
+src/components/broadcasts/step3-personalize.tsx               [P]
 src/components/contacts/contact-detail-view.tsx               [J]
+src/components/inbox/contact-sidebar.tsx                      [N]
 src/components/inbox/conversation-list.tsx                    [J]
 src/components/inbox/message-bubble.tsx                       [D, G]
-src/components/inbox/message-composer.tsx                     [D, K]
+src/components/inbox/message-composer.tsx                     [D, K, O, P]
 src/components/inbox/message-media.tsx                        [D]
-src/components/inbox/message-thread.tsx                       [G, H, I, J, K]
+src/components/inbox/message-thread.tsx                       [G, H, I, J, K, N, P]
 src/components/inbox/new-chat-dialog.tsx                      [J]  new
+src/components/inbox/quick-reply-fill-dialog.tsx              [O]  new
 src/components/inbox/quick-reply-picker.tsx                   [K]
-src/components/inbox/template-picker.tsx                      [J]
+src/components/inbox/template-picker.tsx                      [J, P]
+src/components/media/media-library-dialog.tsx                 [P]  new
 src/components/settings/password-form.tsx                     [L]
-src/components/settings/quick-replies-manager.tsx             [K]
+src/components/settings/quick-replies-manager.tsx             [K, O]
+src/components/interactive/interactive-builder.tsx            [O, P]
+src/components/interactive/interactive-preview.tsx            [O]
 src/components/settings/settings-rail.tsx                     [C]
 src/components/settings/settings-sections.ts                  [C]
 src/components/ui/password-input.tsx                          [L]  new
 src/lib/api/v1/conversations.ts (+ .test.ts)                  [F, G, H, I]
 src/lib/api/v1/sender.ts (+ .test.ts)                         [G, H]  new
 src/lib/auth/redeem-invitation-migration.test.ts              [M]
+src/lib/contacts/save-profile.ts (+ .test.ts)                 [N]  new
 src/lib/conversations/assign.ts (+ .test.ts)                  [I]  new
 src/lib/dashboard/agent-scope-migration.test.ts               [M]  new
 src/lib/inbox/assignment-events.ts (+ .test.ts)               [I]  new
-src/lib/quick-replies/placeholders.ts (+ .test.ts)            [K]  new
+src/lib/quick-replies/placeholders.ts (+ .test.ts)            [K, O]  new
+src/lib/quick-replies/fill-payload.ts (+ .test.ts)            [O]  new
+src/lib/storage/media-library.ts (+ .test.ts)                 [P]  new
 src/lib/webhooks/events.ts                                    [I]
-src/lib/whatsapp/send-message.ts                              [G, H]
+src/lib/whatsapp/interactive.ts                               [O]
+src/lib/whatsapp/meta-api.ts                                  [O]
+src/lib/whatsapp/send-message.ts                              [G, H, O]
 src/lib/whatsapp/send-message.assignment.test.ts              [H, I]  new
 src/lib/whatsapp/start-chat.ts (+ .test.ts)                   [J]  new
 supabase/migrations/900_agent_conversation_visibility.sql     [H]  new (was 047)
@@ -387,6 +398,77 @@ filter, or drifts from upstream's function in any other way.
 version into a new 90x migration and re-apply the filter (the test will flag it).
 **Applying the migration:** run 903 **after** upstream's 059.
 
+### N. Edit tags and the customer profile from the chat
+**Branch:** `chat-contact-editing` (2026-10-24)
+**Files:** `src/components/inbox/contact-sidebar.tsx`, `src/lib/contacts/save-profile.ts`,
+`src/app/(dashboard)/inbox/page.tsx`, `src/components/inbox/message-thread.tsx`,
+`messages/*.json` (`Inbox.sidebar`, `Inbox.page.contactSheetTitle`, `Inbox.messageThread.openContact`)
+
+- **Profile:** ✎ next to the name edits name, email, company and any custom fields in place.
+  The phone number stays read-only (changing it would redirect the chat). `saveContactProfile`
+  validates the email, upserts filled custom values and deletes cleared ones; the new name shows in
+  the list and the chat header at once.
+- **Tags:** × on each tag removes it; + opens a searchable picker of the account's existing tags.
+  Both go through `/api/contacts/{id}/tags` (`tag-api.ts`), so adding a tag fires "Tag added"
+  automations — department routing — exactly as on the Contacts page. New tags are still created
+  by admins in Settings → Fields & tags.
+- **Who:** anyone who can send (agent and up), matching the contacts RLS. Viewers see it read-only.
+- **Where:** the side panel shows from 1280px (`xl`; it was `lg`, which squeezed the chat to ~190px
+  on 1024–1279px screens). Below that, tapping the customer's name or avatar in the chat header
+  opens the same panel as a sheet from the bottom. On desktop the same tap reopens a hidden panel.
+
+**Why:** staff tag and correct customers while chatting, on desktop and on their phones.
+**Tests:** `save-profile.test.ts`.
+**Upstream-merge risk:** *Medium.* `contact-sidebar.tsx` was read-only upstream; if upstream edits
+it, keep the edit form, tag controls and `variant` prop.
+
+### O. Quick replies with an image and fill-in details
+**Branch:** `quick-reply-image-vars` (2026-10-24)
+**Files:** `src/lib/whatsapp/interactive.ts`, `meta-api.ts`, `send-message.ts`,
+`src/components/interactive/interactive-builder.tsx`, `interactive-preview.tsx`,
+`src/lib/quick-replies/placeholders.ts`, `fill-payload.ts`, `src/components/inbox/quick-reply-fill-dialog.tsx`,
+`src/components/inbox/message-composer.tsx`, `src/components/settings/quick-replies-manager.tsx`
+
+- **Image header:** a reply-button message can carry `header_image_url` (public https JPEG/PNG)
+  instead of a text header; sent to Meta as `header.type = image`, shown in the preview and the
+  chat bubble. The builder's Text / Image switch (upload to `chat-media` or paste a link) is on
+  only in the inbox and the quick replies manager (`allowImageHeader`), because automations and
+  flows send through their own code without it.
+- **Fill-ins `{{1}}`, `{{2}}`…:** picking a quick reply that has them opens a form for each value
+  with a live preview; the reply goes in only when all are filled. `{name}` / `{first_name}` fill
+  as before, now in button messages too. The composer refuses to send any text or button message
+  that still has a `{{n}}`. The public API returns quick replies as written.
+
+**Why:** the team sends the studio-website offer as a free quick reply once the customer has said
+hi (24-hour window), instead of a paid Marketing template.
+**Tests:** `placeholders.test.ts` (numbered), `fill-payload.test.ts`.
+**Upstream-merge risk:** *Medium.* Touches the shared interactive payload and the composer; if
+upstream changes `sendInteractiveButtons` or the builder, keep `headerImageUrl` and the switch.
+
+### P. Media Library: reuse uploaded files
+**Branch:** `media-library` (2026-10-24)
+**Files:** `src/lib/storage/media-library.ts`, `src/components/media/media-library-dialog.tsx`,
+`src/components/inbox/message-composer.tsx`, `message-thread.tsx`, `template-picker.tsx`,
+`src/components/interactive/interactive-builder.tsx`, `src/components/broadcasts/step3-personalize.tsx`,
+`messages/*.json` (`MediaLibrary.*`, `Inbox.composer.library`)
+
+- A picker over the `chat-media` bucket: **Our files** (the account folder plus one level into
+  each subfolder except `inbound`) and **Received from customers** (`inbound`). Search, thumbnails,
+  "Load more", and Upload (adds to Our files and picks it). It only shows files the caller can
+  use (`fitsAccept`: kind, MIME type, Meta's size caps; image headers JPEG/PNG ≤ 5 MB, template
+  video MP4, template document PDF via `acceptForHeader`).
+- Offered in: the composer (📎 menu and the ⊕ sheet), the button-message image header, the
+  template picker's media header, and the broadcast wizard's header media.
+- **Never deletes.** A library pick is staged without a storage `path`; the composer's discard
+  cleanup and the thread's failed-send cleanup only delete when a `path` is set (one-off uploads).
+- No database change: members can list their own account folder (migration 043's chat-media
+  read policy), and the bucket is public so Meta can fetch the links.
+
+**Why:** staff re-uploaded the same brochures and images; now they pick them again.
+**Tests:** `media-library.test.ts` (kinds, names, accept rules, folder walk, inbound tab).
+**Upstream-merge risk:** *Low–Medium.* If upstream changes the composer's draft/cleanup code, keep
+`path` optional and the delete guarded by it.
+
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
 
 These are **not** code changes; they're how this instance is wired. A fresh fork must set its own.
@@ -418,6 +500,10 @@ Created through the running app, stored in Supabase (per-account rows), **not** 
   Studio / App & website / AIoT / EduSMS enquiry, Quote coming, Offer a call back, Offer a live
   demo, Checking with team, Follow-up, Thank you), several using `{name}`. Edit them in
   Settings → Quick replies.
+- **Studio website offer (English / Telugu)** — two button quick replies added 2026-10-24 with
+  the header image `chat-media/account-<id>/quick-replies/studio-website.jpg`, fill-ins {{1}} name,
+  {{2}} sender, {{3}} city, {{4}} starting price, and buttons with the same ids in both languages:
+  `studio_site_interested`, `studio_site_not_interested`, `studio_site_more_details`.
 
 A fresh deployment recreates these in the UI (or via a seed script if one is added later).
 
