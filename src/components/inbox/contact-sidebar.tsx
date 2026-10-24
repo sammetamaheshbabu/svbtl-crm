@@ -46,6 +46,12 @@ interface ContactSidebarProps {
 
 type ContactTagRow = Tag & { contact_tag_id: string };
 
+function mapContactTags(rows: Record<string, unknown>[]): ContactTagRow[] {
+  return rows
+    .filter((ct) => ct.tags)
+    .map((ct) => ({ ...(ct.tags as Tag), contact_tag_id: ct.id as string }));
+}
+
 export function ContactSidebar({
   contact,
   onContactUpdated,
@@ -80,6 +86,17 @@ export function ContactSidebar({
   const [tagSearch, setTagSearch] = useState("");
   const [busyTagId, setBusyTagId] = useState<string | null>(null);
 
+  const contactId = contact?.id;
+
+  const fetchTags = useCallback(async () => {
+    if (!contactId) return;
+    const { data } = await createClient()
+      .from("contact_tags")
+      .select("id, tag_id, tags(*)")
+      .eq("contact_id", contactId);
+    if (data) setTags(mapContactTags(data));
+  }, [contactId]);
+
   const fetchContactData = useCallback(async () => {
     if (!contact) return;
 
@@ -110,15 +127,7 @@ export function ContactSidebar({
 
     if (dealsRes.data) setDeals(dealsRes.data);
     if (notesRes.data) setNotes(notesRes.data);
-    if (tagsRes.data) {
-      const mapped = tagsRes.data
-        .filter((ct: Record<string, unknown>) => ct.tags)
-        .map((ct: Record<string, unknown>) => ({
-          ...(ct.tags as Tag),
-          contact_tag_id: ct.id as string,
-        }));
-      setTags(mapped);
-    }
+    if (tagsRes.data) setTags(mapContactTags(tagsRes.data));
     if (fieldsRes.data) setCustomFields(fieldsRes.data as CustomField[]);
     if (valuesRes.data) {
       const map: Record<string, string> = {};
@@ -135,10 +144,41 @@ export function ContactSidebar({
   }, [fetchContactData]);
 
   // Another chat opened: drop a half-finished edit.
-  const contactId = contact?.id;
   useEffect(() => {
     setEditing(false);
   }, [contactId]);
+
+  // Automations tag customers while the chat is open (a tapped "Arrange
+  // a Call Back", a named service). contact_tags isn't on the realtime
+  // publication, but every such automation sends a reply right after
+  // tagging, which updates the conversation row — so re-read the tags
+  // whenever this contact's conversation changes. Debounced: one send
+  // can touch the row more than once.
+  useEffect(() => {
+    if (!contactId) return;
+    const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const channel = supabase
+      .channel(`contact-tags:${contactId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "conversations",
+          filter: `contact_id=eq.${contactId}`,
+        },
+        () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => void fetchTags(), 400);
+        }
+      )
+      .subscribe();
+    return () => {
+      clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [contactId, fetchTags]);
 
   const startEditing = useCallback(() => {
     if (!contact) return;

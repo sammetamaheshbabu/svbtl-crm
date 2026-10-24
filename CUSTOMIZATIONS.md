@@ -529,6 +529,11 @@ into a new 90x migration and re-apply the filter (the test will flag it).
 - Editing needs the agent role (`useCan('send-messages')`), matching the contacts RLS.
 - The side panel now shows from `xl` (1280px) instead of `lg`: on 1024–1279px it squeezed the chat
   to ~190px. Below `xl`, the header tap opens the sheet; on desktop it reopens a hidden panel.
+- **Live tags (2026-10-24):** tags that automations add while the chat is open (e.g. a tapped
+  "Arrange a Call Back" / "Arrange a Live Demo", or a named studio service) appear without reloading.
+  `contact_tags` isn't on the realtime publication, but every tagging automation then sends a reply,
+  which updates the conversation row. So the panel listens for changes to this contact's
+  `conversations` row and re-reads the tags 400 ms later. No migration was needed.
 
 **Why:** staff tag and correct customers while chatting, on desktop and on phones.
 **Tests:** `save-profile.test.ts`.
