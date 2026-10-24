@@ -4,10 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Loader2, MessageSquarePlus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
-import { findExistingContact, type ExistingContact } from "@/lib/contacts/dedupe";
+import { HandHelping, Loader2, MessageSquarePlus, UserRoundX } from "lucide-react";
+import type { NumberLookup } from "@/lib/contacts/number-lookup";
 import { parseInternationalPhone } from "@/lib/whatsapp/phone-utils";
 import { renderTemplateBody } from "@/lib/whatsapp/template-body";
 import type { MessageTemplate } from "@/types";
@@ -68,36 +66,64 @@ interface NewChatDialogProps {
 
 export function NewChatDialog({ open, onOpenChange, onStarted }: NewChatDialogProps) {
   const t = useTranslations("Inbox.newChat");
-  const { accountId } = useAuth();
 
   const [code, setCode] = useState<string>("+91");
   const [number, setNumber] = useState("");
   const [name, setName] = useState("");
   const [optIn, setOptIn] = useState(false);
-  const [existing, setExisting] = useState<ExistingContact | null>(null);
+  // What the server knows about the typed number (see /api/contacts/lookup).
+  const [existing, setExisting] = useState<NumberLookup | null>(null);
+  const [requesting, setRequesting] = useState(false);
+  const [requested, setRequested] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sending, setSending] = useState(false);
   // Set before the picker closes itself, so closing doesn't reopen the form.
   const sendingRef = useRef(false);
 
   const phone = parseInternationalPhone(fullNumber(code, number));
-  const optedInAt =
-    typeof existing?.whatsapp_opt_in_at === "string" ? existing.whatsapp_opt_in_at : null;
+  const known = existing?.exists ? existing : null;
+  const optedInAt = known?.optedInAt ?? null;
+  // Another agent's customer: say so now, not at Send.
+  const blocked = !!known?.blocked;
 
-  // Show who the number belongs to, and whether they already opted in.
+  // Ask the server who the number belongs to. It runs with server rights
+  // because agents can't see other agents' customers (migration 904).
   useEffect(() => {
-    if (!phone || !accountId) return;
+    if (!phone) return;
     let cancelled = false;
     const timer = setTimeout(async () => {
-      const match = await findExistingContact(createClient(), accountId, phone);
-      if (!cancelled) setExisting(match);
+      const res = await fetch(`/api/contacts/lookup?phone=${encodeURIComponent(`+${phone}`)}`).catch(() => null);
+      const data = res?.ok ? ((await res.json()) as NumberLookup) : null;
+      if (!cancelled) setExisting(data);
     }, 400);
     return () => {
       cancelled = true;
       clearTimeout(timer);
       setExisting(null);
+      setRequested(false);
     };
-  }, [phone, accountId]);
+  }, [phone]);
+
+  async function askForHandover() {
+    if (!known?.conversationId) return;
+    setRequesting(true);
+    try {
+      const res = await fetch(`/api/conversations/${known.conversationId}/handover-request`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || t("handoverFailed"));
+        return;
+      }
+      setRequested(true);
+      toast.success(
+        data.status === "already_requested" ? t("handoverAlreadyRequested") : t("handoverSent"),
+      );
+    } finally {
+      setRequesting(false);
+    }
+  }
 
   function reset() {
     setCode("+91");
@@ -105,6 +131,7 @@ export function NewChatDialog({ open, onOpenChange, onStarted }: NewChatDialogPr
     setName("");
     setOptIn(false);
     setExisting(null);
+    setRequested(false);
   }
 
   function handleOpenChange(next: boolean) {
@@ -167,7 +194,8 @@ export function NewChatDialog({ open, onOpenChange, onStarted }: NewChatDialogPr
     }
   }
 
-  const canContinue = !!phone && (optIn || !!optedInAt) && !sending;
+  const canContinue = !!phone && !blocked && (optIn || !!optedInAt) && !sending;
+  const ownerName = known?.handledBy?.name || t("aTeammate");
 
   return (
     <>
@@ -215,13 +243,35 @@ export function NewChatDialog({ open, onOpenChange, onStarted }: NewChatDialogPr
               <p className="text-[11px] text-muted-foreground">
                 {number.trim() && !phone
                   ? t("numberInvalid")
-                  : existing
-                    ? t("existingContact", { name: existing.name || `+${phone}` })
-                    : t("numberHint")}
+                  : known && !blocked
+                    ? t("existingContact", { name: known.contactName || `+${phone}` })
+                    : blocked
+                      ? null
+                      : t("numberHint")}
               </p>
             </div>
 
-            {!existing && (
+            {blocked && (
+              <div className="space-y-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+                <p className="flex items-start gap-2 text-xs text-amber-200">
+                  <UserRoundX className="mt-0.5 h-4 w-4 shrink-0" />
+                  {t("handledByOther", { name: known?.contactName || `+${phone}`, owner: ownerName })}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={requesting || requested}
+                  onClick={() => void askForHandover()}
+                  className="w-full border-amber-500/40"
+                >
+                  {requesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandHelping className="h-4 w-4" />}
+                  {requested ? t("handoverRequested") : t("askHandover", { owner: ownerName })}
+                </Button>
+              </div>
+            )}
+
+            {!known && (
               <div className="space-y-1">
                 <Label className="text-xs text-popover-foreground">{t("nameLabel")}</Label>
                 <Input
@@ -233,7 +283,7 @@ export function NewChatDialog({ open, onOpenChange, onStarted }: NewChatDialogPr
               </div>
             )}
 
-            {optedInAt ? (
+            {blocked ? null : optedInAt ? (
               <p className="rounded-md border border-border bg-background/50 p-3 text-xs text-muted-foreground">
                 {t("alreadyOptedIn", { date: format(new Date(optedInAt), "d MMM yyyy") })}
               </p>

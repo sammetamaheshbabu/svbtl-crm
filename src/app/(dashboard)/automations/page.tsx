@@ -60,7 +60,9 @@ const TEMPLATE_ICON: Record<TemplateSlug, typeof Zap> = {
 
 export default function AutomationsPage() {
   const router = useRouter()
-  const canCreate = useCan("send-messages")
+  // SVBTL fork: automations route chats, so only admins change them;
+  // agents get a read-only list with run logs (migration 904).
+  const canCreate = useCan("edit-settings")
   const t = useTranslations("Automations.list")
   const tGate = useTranslations("GatedButton")
   const [automations, setAutomations] = useState<Automation[] | null>(null)
@@ -179,7 +181,7 @@ export default function AutomationsPage() {
         </GatedButton>
       </div>
 
-      {showTemplates && (
+      {showTemplates && canCreate && (
         <section>
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t("templatesTitle")}</h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -220,6 +222,7 @@ export default function AutomationsPage() {
             <AutomationCard
               key={a.id}
               automation={a}
+              canManage={canCreate}
               onToggle={(next) => toggleActive(a, next)}
               onEdit={() => router.push(`/automations/${a.id}/edit`)}
               onDuplicate={() => duplicate(a)}
@@ -265,6 +268,7 @@ export default function AutomationsPage() {
 function AutomationCard({
   automation,
   onToggle,
+  canManage,
   onEdit,
   onDuplicate,
   onLogs,
@@ -272,6 +276,8 @@ function AutomationCard({
   t,
 }: {
   automation: Automation
+  /** Admins edit; others see a read-only card that opens the run logs. */
+  canManage: boolean
   onToggle: (next: boolean) => void
   onEdit: () => void
   onDuplicate: () => void
@@ -297,7 +303,7 @@ function AutomationCard({
 
         <button
           type="button"
-          onClick={onEdit}
+          onClick={canManage ? onEdit : onLogs}
           className="min-w-0 flex-1 text-left"
         >
           <div className="flex items-center gap-2">
@@ -336,6 +342,7 @@ function AutomationCard({
         <div className="flex items-center gap-3">
           <Switch
             checked={automation.is_active}
+            disabled={!canManage}
             onCheckedChange={(v) => onToggle(!!v)}
             aria-label={automation.is_active ? t("deactivate") : t("activate")}
           />
@@ -348,23 +355,31 @@ function AutomationCard({
               <MoreVertical className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onEdit}>
-                <Pencil className="h-4 w-4" />
-                {t("edit")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onDuplicate}>
-                <Copy className="h-4 w-4" />
-                {t("duplicate")}
-              </DropdownMenuItem>
+              {canManage && (
+                <>
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Pencil className="h-4 w-4" />
+                    {t("edit")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onDuplicate}>
+                    <Copy className="h-4 w-4" />
+                    {t("duplicate")}
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem onClick={onLogs}>
                 <FileText className="h-4 w-4" />
                 {t("viewLogs")}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                <Trash2 className="h-4 w-4" />
-                {t("delete")}
-              </DropdownMenuItem>
+              {canManage && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                    <Trash2 className="h-4 w-4" />
+                    {t("delete")}
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

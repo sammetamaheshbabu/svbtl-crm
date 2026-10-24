@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { AdminOnlyRoute } from "@/components/auth/admin-only-route";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,7 +23,7 @@ import type { FlowRow, FlowNodeRow } from "@/lib/flows/types";
  * 404s on a flow id the caller doesn't own (RLS), which becomes the
  * "Flow not found" state below.
  */
-export default function FlowEditorPage() {
+function FlowEditorPageInner() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const t = useTranslations("Flows.edit");
@@ -88,4 +89,14 @@ export default function FlowEditorPage() {
   }
 
   return <FlowEditorShell initialFlow={flow} initialNodes={nodes} />;
+}
+
+// SVBTL fork: only admins edit flows; others see the runs (migration 904).
+export default function FlowEditorPage() {
+  const params = useParams<{ id: string }>();
+  return (
+    <AdminOnlyRoute fallback={`/flows/${params.id}/runs`}>
+      <FlowEditorPageInner />
+    </AdminOnlyRoute>
+  );
 }

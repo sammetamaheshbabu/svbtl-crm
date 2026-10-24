@@ -70,6 +70,9 @@ export default function ContactsPage() {
   const supabase = createClient();
   const canEdit = useCan('send-messages');
   const canEditSettings = useCan('edit-settings');
+  // SVBTL fork: agents add and edit contacts; importing and deleting are
+  // admin-only (deletes are also refused by migration 904).
+  const canImportOrDelete = canEditSettings;
 
   const [contacts, setContacts] = useState<ContactWithTags[]>([]);
   const [loading, setLoading] = useState(true);
@@ -363,8 +366,8 @@ export default function ContactsPage() {
           )}
           <GatedButton
             variant="outline"
-            canAct={canEdit}
-            gateReason={tGate('reasons.addOrImportContacts')}
+            canAct={canImportOrDelete}
+            gateReason={tGate('reasons.importContacts')}
             onClick={() => setImportOpen(true)}
             className="border-border text-muted-foreground hover:bg-muted"
           >
@@ -517,7 +520,7 @@ export default function ContactsPage() {
             <GatedButton
               variant="destructive"
               size="sm"
-              canAct={canEdit}
+              canAct={canImportOrDelete}
               gateReason={tGate('reasons.deleteContacts')}
               onClick={() => setBulkDeleteOpen(true)}
             >
@@ -673,17 +676,21 @@ export default function ContactsPage() {
                           <Pencil className="size-4" />
                           {t('editAction')}
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-border" />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            confirmDelete(contact);
-                          }}
-                        >
-                          <Trash2 className="size-4" />
-                          {t('deleteAction')}
-                        </DropdownMenuItem>
+                        {canImportOrDelete && (
+                          <>
+                            <DropdownMenuSeparator className="bg-border" />
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDelete(contact);
+                              }}
+                            >
+                              <Trash2 className="size-4" />
+                              {t('deleteAction')}
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

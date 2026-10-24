@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { AdminOnlyRoute } from "@/components/auth/admin-only-route"
 import { Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -13,7 +14,7 @@ import {
 } from "@/components/automations/automation-builder"
 import type { AutomationTriggerType } from "@/types"
 
-export default function EditAutomationPage({
+function EditAutomationPageInner({
   params,
 }: {
   params: Promise<{ id: string }>
@@ -73,4 +74,19 @@ export default function EditAutomationPage({
   }
 
   return <AutomationBuilder initial={initial} />
+}
+
+// SVBTL fork: only admins edit automations; others see the run logs
+// (migration 904).
+export default function EditAutomationPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = use(params)
+  return (
+    <AdminOnlyRoute fallback={`/automations/${id}/logs`}>
+      <EditAutomationPageInner params={params} />
+    </AdminOnlyRoute>
+  )
 }

@@ -592,7 +592,14 @@
       "chooseTemplate": "Escolher modelo",
       "cancel": "Cancelar",
       "sent": "Modelo enviado",
-      "failed": "Não foi possível enviar: {reason}"
+      "failed": "Não foi possível enviar: {reason}",
+      "handledByOther": "{name} já é cliente; quem atende é {owner}.",
+      "askHandover": "Pedir a {owner} para transferir",
+      "handoverRequested": "Pedido enviado",
+      "handoverSent": "Pedido enviado. Aparecerá em Notificações.",
+      "handoverAlreadyRequested": "Você já pediu na última hora.",
+      "handoverFailed": "Não foi possível enviar o pedido.",
+      "aTeammate": "um colega"
     }
   },
   "Contacts": {
@@ -677,7 +684,9 @@
       "phoneRequired": "O número de telefone é obrigatório",
       "phoneNeedsCountryCode": "Inclua o código do país — o número deve começar com + (ex.: +5511999990000)",
       "notAuthenticated": "Não autenticado",
-      "notLinkedToAccount": "Seu perfil não está vinculado a uma conta."
+      "notLinkedToAccount": "Seu perfil não está vinculado a uma conta.",
+      "toastHandledByOther": "{name} já é cliente; quem atende é {owner}. Peça a essa pessoa ou a um administrador para transferir a conversa.",
+      "aTeammate": "um colega"
     },
     "detailView": {
       "tabs": {
@@ -1441,7 +1450,8 @@
       "triggerKeyword": "Acionado por: {keywords}",
       "triggerFirstInbound": "Acionado pela primeira mensagem recebida de um contato",
       "triggerManual": "Acionamento manual",
-      "cloneFailedStatus": "Falha ao clonar: {status}"
+      "cloneFailedStatus": "Falha ao clonar: {status}",
+      "viewRuns": "Ver execuções"
     },
     "edit": {
       "notFound": "Fluxo não encontrado.",
@@ -2479,7 +2489,8 @@
       "createFlows": "criar fluxos",
       "createPipelines": "criar pipelines",
       "createDeals": "criar negócios",
-      "sendMessages": "enviar mensagens"
+      "sendMessages": "enviar mensagens",
+      "importContacts": "importar contatos"
     }
   },
   "Metadata": {
@@ -3003,6 +3014,10 @@
       "submitFailed": "Falha ao enviar o modelo.",
       "metaApiStatus": "Erro da API da Meta: {status}",
       "syncFailed": "Falha ao sincronizar os modelos"
+    },
+    "handover": {
+      "title": "Pedido de transferência",
+      "body": "{requester} pede para você transferir a conversa com {contact}."
     }
   },
   "MediaLibrary": {

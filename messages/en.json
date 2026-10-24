@@ -592,7 +592,14 @@
       "chooseTemplate": "Choose template",
       "cancel": "Cancel",
       "sent": "Template sent",
-      "failed": "Couldn't send: {reason}"
+      "failed": "Couldn't send: {reason}",
+      "handledByOther": "{name} is already a customer, handled by {owner}.",
+      "askHandover": "Ask {owner} to hand it over",
+      "handoverRequested": "Request sent",
+      "handoverSent": "Request sent. They'll see it in Notifications.",
+      "handoverAlreadyRequested": "You already asked in the last hour.",
+      "handoverFailed": "Couldn't send the request.",
+      "aTeammate": "a teammate"
     }
   },
   "Contacts": {
@@ -677,7 +684,9 @@
       "phoneRequired": "Phone number is required",
       "phoneNeedsCountryCode": "Include the country code — the number must start with + (e.g. +14155550123)",
       "notAuthenticated": "Not authenticated",
-      "notLinkedToAccount": "Your profile is not linked to an account."
+      "notLinkedToAccount": "Your profile is not linked to an account.",
+      "toastHandledByOther": "{name} is already a customer, handled by {owner}. Ask them or an admin to hand the chat over.",
+      "aTeammate": "a teammate"
     },
     "detailView": {
       "tabs": {
@@ -1441,7 +1450,8 @@
       "triggerKeyword": "Triggers on: {keywords}",
       "triggerFirstInbound": "Triggers on a contact's first-ever inbound message",
       "triggerManual": "Manual trigger",
-      "cloneFailedStatus": "Clone failed: {status}"
+      "cloneFailedStatus": "Clone failed: {status}",
+      "viewRuns": "View runs"
     },
     "edit": {
       "notFound": "Flow not found.",
@@ -2479,7 +2489,8 @@
       "createFlows": "create flows",
       "createPipelines": "create pipelines",
       "createDeals": "create deals",
-      "sendMessages": "send messages"
+      "sendMessages": "send messages",
+      "importContacts": "import contacts"
     }
   },
   "Metadata": {
@@ -3003,6 +3014,10 @@
       "submitFailed": "Failed to submit template.",
       "metaApiStatus": "Meta API error: {status}",
       "syncFailed": "Failed to sync templates"
+    },
+    "handover": {
+      "title": "Handover requested",
+      "body": "{requester} asks you to hand over the chat with {contact}."
     }
   },
   "MediaLibrary": {

@@ -24,6 +24,7 @@ import {
   type MediaHeaderKind,
 } from '@/lib/whatsapp/media-header-types';
 import { useAuth } from '@/hooks/use-auth';
+import { useCan } from '@/hooks/use-can';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -131,6 +132,9 @@ function emptyButton(type: TemplateButton['type']): TemplateButton {
 
 export function TemplateManager() {
   const t = useTranslations('Settings.templates');
+  // SVBTL fork: agents may sync from Meta, but creating, editing,
+  // resubmitting and deleting stay admin-only (their routes need admin).
+  const canManage = useCan('edit-settings');
   // Meta's category ids (stored as-is) → display label in the UI language.
   const categoryLabel = (category: string) =>
     t.has(`categoryLabels.${category}`) ? t(`categoryLabels.${category}`) : category;
@@ -536,10 +540,12 @@ export function TemplateManager() {
               <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? t('syncing') : t('syncFromMeta')}
             </Button>
-            <Button onClick={openCreate}>
-              <Plus className="size-4" />
-              {t('newTemplate')}
-            </Button>
+            {canManage && (
+              <Button onClick={openCreate}>
+                <Plus className="size-4" />
+                {t('newTemplate')}
+              </Button>
+            )}
           </div>
         }
       />
@@ -609,6 +615,7 @@ export function TemplateManager() {
                       </div>
                     )}
                   </div>
+                  {canManage && (
                   <div className="flex items-center gap-1 shrink-0 ml-2">
                     {statusKey === 'APPROVED' && (
                       <Button
@@ -660,6 +667,7 @@ export function TemplateManager() {
                       )}
                     </Button>
                   </div>
+                  )}
                 </CardContent>
               </Card>
             );

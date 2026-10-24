@@ -84,7 +84,9 @@ const TEMPLATE_ICONS = {
 
 export default function FlowsPage() {
   const router = useRouter();
-  const canCreate = useCan("send-messages");
+  // SVBTL fork: only admins change flows; agents see them and their runs
+  // read-only (migration 904).
+  const canCreate = useCan("edit-settings");
   const t = useTranslations("Flows.list");
   const tGate = useTranslations("GatedButton");
   const [flows, setFlows] = useState<FlowRow[]>([]);
@@ -236,7 +238,9 @@ export default function FlowsPage() {
             <FlowCard
               key={flow.id}
               flow={flow}
+              canManage={canCreate}
               onEdit={() => router.push(`/flows/${flow.id}`)}
+              onRuns={() => router.push(`/flows/${flow.id}/runs`)}
               onDelete={() => handleDelete(flow)}
               t={t}
             />
@@ -360,12 +364,17 @@ function EmptyState({
 
 function FlowCard({
   flow,
+  canManage,
   onEdit,
+  onRuns,
   onDelete,
   t,
 }: {
   flow: FlowRow;
+  /** Admins edit and delete; others get the read-only runs view. */
+  canManage: boolean;
   onEdit: () => void;
+  onRuns: () => void;
   onDelete: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
@@ -409,19 +418,28 @@ function FlowCard({
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-2 border-t border-border pt-3">
-        <Button variant="ghost" size="sm" onClick={onEdit}>
-          <Pencil className="h-3.5 w-3.5" />
-          {t("edit")}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDelete}
-          className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          {t("delete")}
-        </Button>
+        {canManage ? (
+          <>
+            <Button variant="ghost" size="sm" onClick={onEdit}>
+              <Pencil className="h-3.5 w-3.5" />
+              {t("edit")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("delete")}
+            </Button>
+          </>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={onRuns}>
+            <MessageSquare className="h-3.5 w-3.5" />
+            {t("viewRuns")}
+          </Button>
+        )}
       </div>
     </div>
   );
