@@ -126,7 +126,7 @@ function validateOne(step: StepLike, path: string, issues: ValidationIssue[]): v
       if (!nonEmpty(c.subject)) {
         issues.push({ path: `${path}.subject`, message: t('conditionSubjectRequired') })
       }
-      if (c.subject !== 'message_content' && !nonEmpty(c.operand)) {
+      if (c.subject !== 'message_content' && c.subject !== 'any_tag' && !nonEmpty(c.operand)) {
         issues.push({ path: `${path}.operand`, message: t('conditionOperandRequired') })
       }
       if (

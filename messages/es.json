@@ -1380,7 +1380,8 @@
           "tag_presence": "Presencia de etiqueta",
           "contact_field": "Campo del contacto",
           "message_content": "Contenido del mensaje",
-          "time_of_day": "Hora del día"
+          "time_of_day": "Hora del día",
+          "any_tag": "El contacto tiene alguna etiqueta"
         },
         "operandLabel": "Operando",
         "placeholderTime": "HH:mm-HH:mm",
@@ -1399,7 +1400,12 @@
         "matchExact": "Exacta",
         "waitForReply": "Esperar respuesta antes de continuar",
         "waitForReplyHint": "Se detiene aquí hasta que el cliente toque un botón o responda (hasta 24 h). Los pasos siguientes, incluido Si/Si no sobre el contenido del mensaje, usan esa respuesta.",
-        "closeConversationHint": "Cambia el estado de la conversación a \"cerrada\". No requiere configuración."
+        "closeConversationHint": "Cambia el estado de la conversación a \"cerrada\". No requiere configuración.",
+        "priority": "Prioridad",
+        "priorityNormal": "Normal",
+        "priorityLow": "Baja: solo si ninguna Normal coincide",
+        "priorityLowest": "Mínima: solo si nada más coincide",
+        "priorityHint": "Cuando un mensaje coincide con varias automatizaciones de palabras clave, solo se ejecutan las de mayor prioridad. Usa Mínima para un saludo general."
       },
       "preview": {
         "noText": "sin texto aún",

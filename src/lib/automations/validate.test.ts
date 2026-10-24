@@ -230,6 +230,10 @@ describe("validateStepsForActivation", () => {
       .toEqual([]);
     expect(condition({ subject: "time_of_day", operand: "18:00-09:00" })).toEqual([]);
   });
+
+  it("needs no operand for any_tag", () => {
+    expect(condition({ subject: "any_tag" })).toEqual([]);
+  });
 });
 
 describe("validateTriggerForActivation", () => {

@@ -519,7 +519,16 @@ export interface KeywordMatchTriggerConfig {
    */
   match_type: 'exact' | 'contains' | 'word';
   case_sensitive?: boolean;
+  /**
+   * SVBTL fork. When several keyword automations match one message, only
+   * those in the best tier run: any `normal` match silences the `low` and
+   * `lowest` ones, and a `low` match silences `lowest`. Lets a catch-all
+   * greeting step aside for a specific reply. Missing means `normal`.
+   */
+  priority?: KeywordPriority;
 }
+
+export type KeywordPriority = 'normal' | 'low' | 'lowest';
 
 export interface TagTriggerConfig {
   tag_id: string;
@@ -608,7 +617,9 @@ export type ConditionSubject =
   | 'contact_field'
   | 'tag_presence'
   | 'message_content'
-  | 'time_of_day';
+  | 'time_of_day'
+  /** SVBTL fork: the contact carries at least one tag (no operand). */
+  | 'any_tag';
 
 export interface ConditionStepConfig {
   subject: ConditionSubject;
