@@ -592,7 +592,14 @@
       "chooseTemplate": "Elegir plantilla",
       "cancel": "Cancelar",
       "sent": "Plantilla enviada",
-      "failed": "No se pudo enviar: {reason}"
+      "failed": "No se pudo enviar: {reason}",
+      "handledByOther": "{name} ya es cliente; lo atiende {owner}.",
+      "askHandover": "Pedir a {owner} que lo transfiera",
+      "handoverRequested": "Solicitud enviada",
+      "handoverSent": "Solicitud enviada. La verán en Notificaciones.",
+      "handoverAlreadyRequested": "Ya lo pediste en la última hora.",
+      "handoverFailed": "No se pudo enviar la solicitud.",
+      "aTeammate": "un compañero"
     }
   },
   "Contacts": {
@@ -677,7 +684,9 @@
       "phoneRequired": "El número de teléfono es obligatorio",
       "phoneNeedsCountryCode": "Incluye el código de país — el número debe empezar con + (p. ej. +5215512345678)",
       "notAuthenticated": "No autenticado",
-      "notLinkedToAccount": "Tu perfil no está vinculado a una cuenta."
+      "notLinkedToAccount": "Tu perfil no está vinculado a una cuenta.",
+      "toastHandledByOther": "{name} ya es cliente; lo atiende {owner}. Pídele a esa persona o a un administrador que te transfiera el chat.",
+      "aTeammate": "un compañero"
     },
     "detailView": {
       "tabs": {
@@ -1441,7 +1450,8 @@
       "triggerKeyword": "Se activa con: {keywords}",
       "triggerFirstInbound": "Se activa con el primer mensaje entrante de un contacto",
       "triggerManual": "Activación manual",
-      "cloneFailedStatus": "Error al clonar: {status}"
+      "cloneFailedStatus": "Error al clonar: {status}",
+      "viewRuns": "Ver ejecuciones"
     },
     "edit": {
       "notFound": "Flujo no encontrado.",
@@ -2479,7 +2489,8 @@
       "createFlows": "crear flujos",
       "createPipelines": "crear pipelines",
       "createDeals": "crear negocios",
-      "sendMessages": "enviar mensajes"
+      "sendMessages": "enviar mensajes",
+      "importContacts": "importar contactos"
     }
   },
   "Metadata": {
@@ -3003,6 +3014,10 @@
       "submitFailed": "Error al enviar la plantilla.",
       "metaApiStatus": "Error de la API de Meta: {status}",
       "syncFailed": "Error al sincronizar las plantillas"
+    },
+    "handover": {
+      "title": "Solicitud de transferencia",
+      "body": "{requester} te pide transferir el chat con {contact}."
     }
   },
   "MediaLibrary": {

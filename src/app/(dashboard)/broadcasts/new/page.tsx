@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AdminOnlyRoute } from '@/components/auth/admin-only-route';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
@@ -21,7 +22,7 @@ const steps = [
   { label: 'send', key: 'send' },
 ] as const;
 
-export default function NewBroadcastPage() {
+function NewBroadcastPageInner() {
   const router = useRouter();
   const t = useTranslations('Broadcasts.new');
   const { accountId } = useAuth();
@@ -231,5 +232,14 @@ export default function NewBroadcastPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// SVBTL fork: only admins send broadcasts (migration 904).
+export default function NewBroadcastPage() {
+  return (
+    <AdminOnlyRoute fallback="/broadcasts">
+      <NewBroadcastPageInner />
+    </AdminOnlyRoute>
   );
 }

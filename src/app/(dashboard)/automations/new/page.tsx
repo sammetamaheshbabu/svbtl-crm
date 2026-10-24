@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
+import { AdminOnlyRoute } from "@/components/auth/admin-only-route"
 
 import {
   AutomationBuilder,
@@ -15,7 +16,7 @@ import type { AutomationStepType, AutomationTriggerType } from "@/types"
 // `useSearchParams` requires a Suspense boundary or the production build
 // bails to CSR and errors out. Thin wrapper supplies it; the inner
 // component reads the `?template=` query string.
-export default function NewAutomationPage() {
+function NewAutomationPageGuarded() {
   return (
     <Suspense fallback={null}>
       <NewAutomationPageInner />
@@ -102,4 +103,13 @@ function expandFromSeeds(rows: SeedRow[]): BuilderStep[] {
     parent.branches[r.branch ?? "yes"].push(nodes[i])
   })
   return roots
+}
+
+// SVBTL fork: only admins create automations (migration 904).
+export default function NewAutomationPage() {
+  return (
+    <AdminOnlyRoute fallback="/automations">
+      <NewAutomationPageGuarded />
+    </AdminOnlyRoute>
+  )
 }

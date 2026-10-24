@@ -201,7 +201,8 @@ export interface Conversation {
 // Notifications (migration 027)
 // ============================================================
 
-export type NotificationType = 'conversation_assigned';
+// 'handover_requested': SVBTL fork, New chat → "Ask … to hand it over".
+export type NotificationType = 'conversation_assigned' | 'handover_requested';
 
 export interface Notification {
   id: string;

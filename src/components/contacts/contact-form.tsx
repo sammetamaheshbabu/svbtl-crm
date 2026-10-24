@@ -215,15 +215,35 @@ export function ContactForm({
       // normalizes equal). Surface it as the friendly duplicate notice
       // and, for new contacts, point the user at the existing record.
       if (isUniqueViolation(err)) {
-        toast.error(t('toastConflict'));
+        let explained = false;
         if (!isEdit && accountId) {
           const existing = await findExistingContact(
             supabase,
             accountId,
             phone.trim(),
           );
-          if (existing) setDupMatch({ contact: existing, exact: true });
+          if (existing) {
+            setDupMatch({ contact: existing, exact: true });
+          } else {
+            // SVBTL fork: hidden from this agent (another agent's customer,
+            // migration 904) — say whose it is instead of a bare conflict.
+            const digits = parseInternationalPhone(phone.trim());
+            const res = digits
+              ? await fetch(`/api/contacts/lookup?phone=${encodeURIComponent(`+${digits}`)}`).catch(() => null)
+              : null;
+            const found = res?.ok ? await res.json() : null;
+            if (found?.exists && found.handledBy) {
+              explained = true;
+              toast.error(
+                t('toastHandledByOther', {
+                  name: found.contactName || phone.trim(),
+                  owner: found.handledBy.name || t('aTeammate'),
+                }),
+              );
+            }
+          }
         }
+        if (!explained) toast.error(t('toastConflict'));
         return;
       }
       const message = err instanceof Error ? err.message : t('toastError');

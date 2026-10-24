@@ -59,6 +59,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 | N | Edit contact from chat | Edit name/email/company/custom fields, add/remove tags in the chat | 2026-10-24 | — | Medium |
 | O | Quick replies: image + fill-ins | Image header on button messages; `{{1}}`… asked when picking | 2026-10-24 | — | Medium |
 | P | Media Library | Pick already-uploaded files instead of uploading again | 2026-10-24 | — | Low–Medium |
+| Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | pending | 904 | Medium–High |
 
 ## Who can do what
 
@@ -70,8 +71,13 @@ Roles are upstream's (`owner`, `admin`, `agent`, `viewer`). What our customizati
 | Reply to a chat assigned to someone else (H) | Yes | No (403) | No |
 | Claim a chat by replying (H) | No (never claims) | Yes, if unassigned | — |
 | Hand a chat to someone (I) | Yes | Yes, any chat they can see | No |
-| Start a New chat by number (J) | Yes | Yes (claims it) | No |
-| Edit a contact's profile / tags in the chat (N) | Yes | Yes | No (read-only) |
+| Start a New chat by number (J) | Yes | Yes (claims it); warned + "Ask to hand over" if another agent's (Q) | No |
+| See contacts (Q) | All | Own + unassigned chats' customers + contacts with no chat | Same as agent |
+| Add / edit a contact, incl. in the chat (N, Q) | Yes | Yes | No |
+| Import contacts (CSV) / delete contacts (Q) | Yes | No | No |
+| Create / edit deals; delete deals (Q) | Yes / Yes | Yes / No | No |
+| Broadcasts, Automations, Flows (Q) | Full | Read-only (lists, stats, logs, runs) | Read-only |
+| Templates (Q) | Create, edit, submit, delete, sync | View + **Sync from Meta** | View |
 | Use / create quick replies (K, O) | Yes | Yes | No |
 | Pick from / upload to the Media Library (P) | Yes | Yes | No |
 | Admin-only settings (C) | Yes | Hidden | Hidden |
@@ -154,7 +160,17 @@ supabase/migrations/900_agent_conversation_visibility.sql     [H]  new (was 047)
 supabase/migrations/901_conversation_assignments.sql          [I]  new (was 048)
 supabase/migrations/902_contact_whatsapp_opt_in.sql           [J]  new (was 049)
 supabase/migrations/903_dashboard_agent_scope.sql             [M]  new
+supabase/migrations/904_agent_restrictions.sql                [Q]  new
 ```
+
+Section Q (branch `agent-restrictions`) also touches: the automation / flow / broadcast API routes
+and pages, `src/app/(dashboard)/contacts/page.tsx`, `src/components/contacts/contact-form.tsx`,
+`src/components/pipelines/deal-form.tsx`, `src/components/settings/template-manager.tsx`,
+`src/app/api/whatsapp/templates/sync/route.ts`, `src/components/inbox/new-chat-dialog.tsx`,
+`src/app/(dashboard)/notifications/page.tsx`, `src/types/index.ts`, and adds
+`src/components/auth/admin-only-route.tsx`, `src/lib/contacts/number-lookup.ts`,
+`src/lib/conversations/handover-request.ts`, `src/app/api/contacts/lookup/route.ts`,
+`src/app/api/conversations/[conversationId]/handover-request/route.ts` (+ tests).
 
 **Fork migrations are numbered 900+.** Upstream kept adding 047, 048, 049, so ours moved to a
 range it won't reach: they always sort (and run, on a fresh setup) after upstream's. A new fork
@@ -578,6 +594,61 @@ template picker's media header, and the broadcast wizard's header media.
 **Tests:** `media-library.test.ts` (kinds, names, accept rules, folder walk, inbound tab).
 **Upstream-merge risk:** *Low–Medium.* Keep `path` optional and the delete guarded by it.
 
+### Q. Agent restrictions, New chat lookup and handover requests
+**Branch:** `agent-restrictions` (2026-10-24, not yet merged)
+**Migration:** `supabase/migrations/904_agent_restrictions.sql`
+
+**What agents see**
+- **Broadcasts, Automations, Flows — read-only.** The pages stay in the sidebar with their lists,
+  statuses, broadcast stats, automation logs and flow runs. Create / edit / send / resume / on-off
+  / duplicate / delete are hidden or locked ("Read-only — your role can't …"). Opening an editor
+  (`/broadcasts/new`, `/automations/new`, `/automations/{id}/edit`, `/flows/{id}`) sends an agent
+  to the read-only view (`AdminOnlyRoute`).
+- **Templates:** agents can **Sync from Meta**; New template / Edit / Resubmit / Delete are
+  hidden (their routes still require admin).
+- **Contacts:** agents see customers whose chat is theirs or unassigned, plus contacts with no
+  chat yet. They can **add and edit**; **Import CSV and Delete** (single and bulk) are admin-only.
+- **Deals:** agents create and edit; **Delete deal** is admin-only.
+- **New chat:** typing a number asks the server who it belongs to. For another agent's customer
+  the dialog says *"Ravi Kumar is already a customer, handled by Mehveen."*, disables "Choose
+  template", and offers **"Ask Mehveen to hand it over"**. That notifies the owning agent and the
+  owners/admins (Notifications page; tap opens the chat to hand it over). One request per chat per
+  hour. Add contact gives the same "handled by" message for such a number.
+
+**How it works**
+- **904 (database):** insert / update / delete on `broadcasts`, `automations`, `flows` and their
+  child rows (`broadcast_recipients`, `automation_steps`, `flow_nodes`) need admin; `contacts`
+  delete and `deals` delete need admin; `contacts_select` = member **and** `can_see_contact(id,
+  account_id)`, a SECURITY DEFINER function (it must see every chat, or another agent's customer
+  would look like a contact with no chat); notification type `handover_requested` is allowed.
+  The automation and flow engines use the service role, so live automations keep running.
+- **Routes:** every write in `api/automations/*`, `api/flows/*`, `api/whatsapp/broadcast/*` now
+  `requireRole('admin')` (GETs unchanged). `api/whatsapp/templates/sync` accepts agents and writes
+  `message_templates` with the service role, scoped to the account.
+- **Lookup:** `GET /api/contacts/lookup?phone=+…` (agent+, service role) → `lookupNumber`:
+  `{ exists, contactName, optedInAt, conversationId, handledBy, blocked }`. Only about the number
+  given; it never lists contacts.
+- **Handover request:** `POST /api/conversations/{id}/handover-request` (agent+, service role) →
+  `requestHandover`: notifies the assignee + owners/admins, skips the requester, refuses repeats
+  within an hour, and does nothing for an unassigned or own chat.
+- Contact import is hidden in the app only: the database can't tell an import from adding contacts
+  one by one.
+- **Templates list fix:** Settings → Templates listed only templates the signed-in person created
+  (`user_id` filter); it now lists the account's templates (RLS scopes them). Sync sets `user_id`
+  only on insert, so an agent's sync no longer re-stamps everyone's templates as theirs.
+
+**Side effects:** on Pipelines, an agent sees no customer name on a deal whose customer belongs to
+another agent.
+**Why:** agents are department staff; broadcasts, automations (routing rules) and flows affect the
+whole account, and agents shouldn't browse or delete other departments' customers.
+**Tests:** `agent-restrictions-migration.test.ts` (each policy admin-only and last defined by 904,
+contact scope, notification type, admin-only write routes, agent sync), `number-lookup.test.ts`,
+`handover-request.test.ts`.
+**Upstream-merge risk:** *Medium–High.* If upstream changes these policies, re-apply 904 on top; if
+it adds write routes or editor pages for these areas, gate them the same way.
+**Applying the migration:** run 904 in the SQL editor when the code is deployed (either order is
+safe: before it, agents' buttons are already hidden; after it, the database refuses agent writes).
+
 ---
 
 ## 2. Database migrations
@@ -593,6 +664,7 @@ editor of project `yiheffhkyinnwhqahhdl`; there is no automatic migration on dep
 | `901_conversation_assignments.sql` | I | `conversation_assignments` table, trigger, `assign_conversation()` | 2026-10-19 (as 048) |
 | `902_contact_whatsapp_opt_in.sql` | J | `contacts.whatsapp_opt_in_at`, `whatsapp_opt_in_by` | 2026-10-24 (as 049) |
 | `903_dashboard_agent_scope.sql` | M | Agent-scoped lists in `dashboard_overview` | 2026-10-24 |
+| `904_agent_restrictions.sql` | Q | Admin-only writes for broadcasts / automations / flows, contact delete, deal delete; scoped contacts; `handover_requested` notifications | not yet |
 
 900–902 were applied under their old numbers; **don't run them again** on this database (they are
 idempotent, but there's no need). On a fresh database run all upstream migrations in order, then
@@ -633,6 +705,9 @@ All under `/api/v1`, API-key auth. Additive: nothing upstream returns was remove
 | `GET /members` | team members `{ user_id, name, role }` | `conversations:read` | I |
 | `POST /messages` | `sender_user_id`, `opt_in_confirmed`; response `assigned_to_sender` | `messages:send` | G, H, J |
 | `GET /quick-replies` | list replies; `?contact_id=` fills `{name}` | `messages:read` | K |
+
+Dashboard (session) routes added for the web app: `GET /api/contacts/lookup`,
+`POST /api/conversations/{id}/handover-request` (Q).
 
 Webhook: `conversation.assigned` (I).
 

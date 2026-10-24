@@ -10,6 +10,7 @@ import { normalizeStatus } from '@/lib/whatsapp/template-status-normalize'
 import type { TemplateButton, TemplateSampleValues } from '@/types'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { getT } from '@/lib/i18n/translate'
+import { supabaseAdmin } from '@/lib/flows/admin-client'
 
 const t = getT('Api')
 
@@ -133,11 +134,13 @@ function extractSampleValues(
 
 export async function POST() {
   try {
-    // Syncing rewrites the account-wide template catalog, which is
-    // settings-class data: `canEditSettings` and the message_templates
-    // insert/update RLS policies (migration 017) both require 'admin'.
-    // Resolving account_id off the profile only proved membership.
-    const { supabase, accountId, userId } = await requireRole('admin')
+    // SVBTL fork: agents may sync (pull Meta's approved catalog and
+    // statuses) but not create or submit templates. The message_templates
+    // insert/update policies (migration 017) need admin, so the catalog
+    // writes below use the service role, every query scoped to this
+    // account; creating and submitting stay admin-only in their routes.
+    const { supabase, accountId, userId } = await requireRole('agent')
+    const db = supabaseAdmin()
 
     const limit = checkRateLimit(`whatsapp-admin:${userId}`, RATE_LIMITS.whatsappAdmin)
     if (!limit.success) return rateLimitResponse(limit)
@@ -225,11 +228,11 @@ export async function POST() {
           : null
 
       const row = {
-        // Account tenancy + user audit, same split as the submit
-        // route. account_id is NOT NULL on message_templates
-        // post-017, so an INSERT without it errors.
+        // Account tenancy; the author (user_id) is set on insert only, so a
+        // sync never re-stamps someone else's template as the syncer's.
+        // account_id is NOT NULL on message_templates post-017, so an
+        // INSERT without it errors.
         account_id: accountId,
-        user_id: userId,
         name: t.name,
         category: normalizeCategory(t.category),
         language: t.language,
@@ -246,7 +249,7 @@ export async function POST() {
         updated_at: new Date().toISOString(),
       }
 
-      const { data: existing, error: lookupErr } = await supabase
+      const { data: existing, error: lookupErr } = await db
         .from('message_templates')
         .select('id')
         .eq('account_id', accountId)
@@ -264,10 +267,11 @@ export async function POST() {
       }
 
       if (existing?.id) {
-        const { error: updErr } = await supabase
+        const { error: updErr } = await db
           .from('message_templates')
           .update(row)
           .eq('id', existing.id)
+          .eq('account_id', accountId)
         if (updErr) {
           errors.push({
             name: t.name,
@@ -278,9 +282,9 @@ export async function POST() {
           updated++
         }
       } else {
-        const { error: insErr } = await supabase
+        const { error: insErr } = await db
           .from('message_templates')
-          .insert(row)
+          .insert({ ...row, user_id: userId })
         if (insErr) {
           errors.push({
             name: t.name,

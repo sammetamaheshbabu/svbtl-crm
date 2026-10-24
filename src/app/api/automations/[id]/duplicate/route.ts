@@ -17,7 +17,7 @@ export async function POST(
   let accountId: string
   let userId: string
   try {
-    const ctx = await requireRole('agent')
+    const ctx = await requireRole('admin')
     accountId = ctx.accountId
     userId = ctx.userId
   } catch (err) {
