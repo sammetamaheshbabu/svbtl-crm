@@ -457,7 +457,12 @@
       "interactiveShort": "버튼 / 목록",
       "aiDraftShort": "AI 초안",
       "typeMessagePlaceholderShort": "메시지 입력",
-      "enterHint": "Enter로 보내기 · 줄바꿈은 Shift+Enter"
+      "enterHint": "Enter로 보내기 · 줄바꿈은 Shift+Enter",
+      "fillVariablesDesc": "이 메시지에 들어갈 내용을 입력하세요.",
+      "fillVariablesPreview": "미리보기",
+      "fillVariablesCancel": "취소",
+      "fillVariablesUse": "답장 사용",
+      "fillVariablesFirst": "보내기 전에 모든 {example}을 채우세요."
     },
     "bubble": {
       "photo": "사진",
@@ -2281,7 +2286,8 @@
       "textPlaceholder": "삽입할 메시지 텍스트",
       "cancel": "취소",
       "save": "저장",
-      "placeholdersHint": "{name} 또는 {firstName}을 쓰면 답장을 넣을 때 고객 이름이 채워집니다."
+      "placeholdersHint": "{name} 또는 {firstName}을 쓰면 답장을 넣을 때 고객 이름이 채워집니다.",
+      "variablesHint": "답장을 쓸 때마다 채울 내용은 {one}, {two}…로 적으세요."
     }
   },
   "SignupPage": {
@@ -2443,7 +2449,16 @@
     "rowDescriptionPlaceholder": "설명 (선택)",
     "addRow": "행 추가",
     "addSection": "섹션 추가",
-    "defaultListButton": "메뉴"
+    "defaultListButton": "메뉴",
+    "headerType": "헤더",
+    "headerTypeText": "텍스트",
+    "headerTypeImage": "이미지",
+    "headerImage": "헤더 이미지",
+    "uploadImage": "업로드",
+    "imageHint": "JPEG 또는 PNG, 최대 5MB. 메시지 위에 표시됩니다.",
+    "imageTypeError": "JPEG 또는 PNG 이미지를 사용하세요.",
+    "imageSizeError": "이미지는 5MB 이하여야 합니다.",
+    "imageUploadError": "이미지를 업로드하지 못했습니다."
   },
   "DashboardShell": {
     "loading": "불러오는 중..."

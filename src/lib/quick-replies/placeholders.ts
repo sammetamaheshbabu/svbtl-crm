@@ -42,3 +42,33 @@ export function fillPlaceholders(
   }
   return filled;
 }
+
+// ------------------------------------------------------------
+// Numbered fill-ins: {{1}}, {{2}}, ... — values the agent types when
+// picking the reply (a city, a price, their own name). Same syntax as
+// WhatsApp templates, so a template's text can be reused as is.
+// ------------------------------------------------------------
+
+const NUMBERED = /\{\{\s*(\d+)\s*\}\}/g;
+
+/** The distinct variable numbers in `texts`, ascending. */
+export function numberedVariables(...texts: (string | null | undefined)[]): number[] {
+  const found = new Set<number>();
+  for (const text of texts) {
+    for (const m of (text ?? '').matchAll(NUMBERED)) found.add(Number(m[1]));
+  }
+  return [...found].sort((a, b) => a - b);
+}
+
+/** Replace {{n}} with `values[n]`; numbers without a value stay as they are. */
+export function fillNumbered(text: string, values: Record<number, string>): string {
+  return text.replace(NUMBERED, (whole, n: string) => {
+    const value = values[Number(n)];
+    return value !== undefined && value !== '' ? value : whole;
+  });
+}
+
+/** True while any {{n}} is left in the text. */
+export function hasUnfilledVariables(text: string): boolean {
+  return numberedVariables(text).length > 0;
+}

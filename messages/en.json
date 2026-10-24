@@ -457,7 +457,12 @@
       "interactiveShort": "Buttons / list",
       "aiDraftShort": "AI draft",
       "typeMessagePlaceholderShort": "Type a message",
-      "enterHint": "Enter to send · Shift+Enter for a new line"
+      "enterHint": "Enter to send · Shift+Enter for a new line",
+      "fillVariablesDesc": "Fill in the details for this message.",
+      "fillVariablesPreview": "Preview",
+      "fillVariablesCancel": "Cancel",
+      "fillVariablesUse": "Use reply",
+      "fillVariablesFirst": "Fill in every {example} before sending."
     },
     "bubble": {
       "photo": "Photo",
@@ -2281,7 +2286,8 @@
       "textPlaceholder": "The message text to insert",
       "cancel": "Cancel",
       "save": "Save",
-      "placeholdersHint": "Write {name} or {firstName} and the customer's name is filled in when the reply is inserted."
+      "placeholdersHint": "Write {name} or {firstName} and the customer's name is filled in when the reply is inserted.",
+      "variablesHint": "Write {one}, {two}… for details you fill in each time you use the reply."
     }
   },
   "SignupPage": {
@@ -2443,7 +2449,16 @@
     "rowDescriptionPlaceholder": "Description (optional)",
     "addRow": "Add row",
     "addSection": "Add section",
-    "defaultListButton": "Menu"
+    "defaultListButton": "Menu",
+    "headerType": "Header",
+    "headerTypeText": "Text",
+    "headerTypeImage": "Image",
+    "headerImage": "Header image",
+    "uploadImage": "Upload",
+    "imageHint": "JPEG or PNG, up to 5 MB. Shown above the message.",
+    "imageTypeError": "Use a JPEG or PNG image.",
+    "imageSizeError": "The image must be 5 MB or smaller.",
+    "imageUploadError": "Couldn't upload the image."
   },
   "DashboardShell": {
     "loading": "Loading..."

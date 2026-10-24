@@ -30,13 +30,13 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (65, not counting this file; section letter in brackets):
+Files we changed vs upstream (72, not counting this file; section letter in brackets):
 
 ```
 .gitignore                                                    [E]
 docs/security-and-backup.md                                   [E]
-messages/en.json                                              [A, I, J, K, L, N]
-messages/es.json, ko.json, pt.json                            [I, J, K, L, N]
+messages/en.json                                              [A, I, J, K, L, N, O]
+messages/es.json, ko.json, pt.json                            [I, J, K, L, N, O]
 src/app/(auth)/login/page.tsx                                 [B, L]
 src/app/(auth)/reset-password/page.tsx                        [L]
 src/app/(auth)/signup/page.tsx                                [B, L]
@@ -56,14 +56,17 @@ src/components/contacts/contact-detail-view.tsx               [J]
 src/components/inbox/contact-sidebar.tsx                      [N]
 src/components/inbox/conversation-list.tsx                    [J]
 src/components/inbox/message-bubble.tsx                       [D, G]
-src/components/inbox/message-composer.tsx                     [D, K]
+src/components/inbox/message-composer.tsx                     [D, K, O]
 src/components/inbox/message-media.tsx                        [D]
 src/components/inbox/message-thread.tsx                       [G, H, I, J, K, N]
 src/components/inbox/new-chat-dialog.tsx                      [J]  new
+src/components/inbox/quick-reply-fill-dialog.tsx              [O]  new
 src/components/inbox/quick-reply-picker.tsx                   [K]
 src/components/inbox/template-picker.tsx                      [J]
 src/components/settings/password-form.tsx                     [L]
-src/components/settings/quick-replies-manager.tsx             [K]
+src/components/settings/quick-replies-manager.tsx             [K, O]
+src/components/interactive/interactive-builder.tsx            [O]
+src/components/interactive/interactive-preview.tsx            [O]
 src/components/settings/settings-rail.tsx                     [C]
 src/components/settings/settings-sections.ts                  [C]
 src/components/ui/password-input.tsx                          [L]  new
@@ -74,9 +77,12 @@ src/lib/contacts/save-profile.ts (+ .test.ts)                 [N]  new
 src/lib/conversations/assign.ts (+ .test.ts)                  [I]  new
 src/lib/dashboard/agent-scope-migration.test.ts               [M]  new
 src/lib/inbox/assignment-events.ts (+ .test.ts)               [I]  new
-src/lib/quick-replies/placeholders.ts (+ .test.ts)            [K]  new
+src/lib/quick-replies/placeholders.ts (+ .test.ts)            [K, O]  new
+src/lib/quick-replies/fill-payload.ts (+ .test.ts)            [O]  new
 src/lib/webhooks/events.ts                                    [I]
-src/lib/whatsapp/send-message.ts                              [G, H]
+src/lib/whatsapp/interactive.ts                               [O]
+src/lib/whatsapp/meta-api.ts                                  [O]
+src/lib/whatsapp/send-message.ts                              [G, H, O]
 src/lib/whatsapp/send-message.assignment.test.ts              [H, I]  new
 src/lib/whatsapp/start-chat.ts (+ .test.ts)                   [J]  new
 supabase/migrations/900_agent_conversation_visibility.sql     [H]  new (was 047)
@@ -413,6 +419,29 @@ version into a new 90x migration and re-apply the filter (the test will flag it)
 **Upstream-merge risk:** *Medium.* `contact-sidebar.tsx` was read-only upstream; if upstream edits
 it, keep the edit form, tag controls and `variant` prop.
 
+### O. Quick replies with an image and fill-in details
+**Branch:** `quick-reply-image-vars` (2026-10-24)
+**Files:** `src/lib/whatsapp/interactive.ts`, `meta-api.ts`, `send-message.ts`,
+`src/components/interactive/interactive-builder.tsx`, `interactive-preview.tsx`,
+`src/lib/quick-replies/placeholders.ts`, `fill-payload.ts`, `src/components/inbox/quick-reply-fill-dialog.tsx`,
+`src/components/inbox/message-composer.tsx`, `src/components/settings/quick-replies-manager.tsx`
+
+- **Image header:** a reply-button message can carry `header_image_url` (public https JPEG/PNG)
+  instead of a text header; sent to Meta as `header.type = image`, shown in the preview and the
+  chat bubble. The builder's Text / Image switch (upload to `chat-media` or paste a link) is on
+  only in the inbox and the quick replies manager (`allowImageHeader`), because automations and
+  flows send through their own code without it.
+- **Fill-ins `{{1}}`, `{{2}}`…:** picking a quick reply that has them opens a form for each value
+  with a live preview; the reply goes in only when all are filled. `{name}` / `{first_name}` fill
+  as before, now in button messages too. The composer refuses to send any text or button message
+  that still has a `{{n}}`. The public API returns quick replies as written.
+
+**Why:** the team sends the studio-website offer as a free quick reply once the customer has said
+hi (24-hour window), instead of a paid Marketing template.
+**Tests:** `placeholders.test.ts` (numbered), `fill-payload.test.ts`.
+**Upstream-merge risk:** *Medium.* Touches the shared interactive payload and the composer; if
+upstream changes `sendInteractiveButtons` or the builder, keep `headerImageUrl` and the switch.
+
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
 
 These are **not** code changes; they're how this instance is wired. A fresh fork must set its own.
@@ -444,6 +473,10 @@ Created through the running app, stored in Supabase (per-account rows), **not** 
   Studio / App & website / AIoT / EduSMS enquiry, Quote coming, Offer a call back, Offer a live
   demo, Checking with team, Follow-up, Thank you), several using `{name}`. Edit them in
   Settings → Quick replies.
+- **Studio website offer (English / Telugu)** — two button quick replies added 2026-10-24 with
+  the header image `chat-media/account-<id>/quick-replies/studio-website.jpg`, fill-ins {{1}} name,
+  {{2}} sender, {{3}} city, {{4}} starting price, and buttons with the same ids in both languages:
+  `studio_site_interested`, `studio_site_not_interested`, `studio_site_more_details`.
 
 A fresh deployment recreates these in the UI (or via a seed script if one is added later).
 

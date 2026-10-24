@@ -418,6 +418,7 @@ export async function sendMessageToConversation(
           to: phone,
           bodyText: p.body,
           headerText: p.header || undefined,
+          headerImageUrl: p.header_image_url || undefined,
           footerText: p.footer || undefined,
           buttons: p.buttons,
           contextMessageId,

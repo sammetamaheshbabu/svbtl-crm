@@ -62,7 +62,14 @@ import {
 import { validateInteractivePayload } from "@/lib/whatsapp/interactive";
 import type { InteractiveMessagePayload, QuickReply } from "@/types";
 import { QuickReplyPicker } from "./quick-reply-picker";
-import { fillPlaceholders } from "@/lib/quick-replies/placeholders";
+import {
+  fillNumbered,
+  fillPlaceholders,
+  hasUnfilledVariables,
+  numberedVariables,
+} from "@/lib/quick-replies/placeholders";
+import { mapPayloadText, payloadTexts } from "@/lib/quick-replies/fill-payload";
+import { QuickReplyFillDialog } from "./quick-reply-fill-dialog";
 
 /** Media content types an agent can send from the composer. */
 export type ComposerMediaKind = "image" | "video" | "document" | "audio";
@@ -186,6 +193,12 @@ export function MessageComposer({
   // Narrow composer: every action lives in one sheet, so the message box
   // keeps the whole row.
   const [actionsOpen, setActionsOpen] = useState(false);
+  // A picked quick reply with {{1}}, {{2}}… waiting for its values.
+  const [pendingFill, setPendingFill] = useState<{
+    qr: QuickReply;
+    fromSlash: boolean;
+    numbers: number[];
+  } | null>(null);
   // "/" at the start of the message lists quick replies by title. Reloaded
   // each time the list opens, so replies added in Settings show up; Esc
   // hides it until the text changes.
@@ -299,6 +312,10 @@ export function MessageComposer({
   const handleSend = useCallback(async () => {
     const trimmed = text.trim();
     if (!trimmed || sending || sessionExpired) return;
+    if (hasUnfilledVariables(trimmed)) {
+      toast.error(t("fillVariablesFirst", { example: "{{n}}" }));
+      return;
+    }
 
     setSending(true);
     try {
@@ -310,7 +327,7 @@ export function MessageComposer({
     } finally {
       setSending(false);
     }
-  }, [text, sending, sessionExpired, onSend, replyTo?.id]);
+  }, [text, sending, sessionExpired, onSend, replyTo?.id, t]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -391,10 +408,14 @@ export function MessageComposer({
       toast.error(result.error);
       return;
     }
+    if (payloadTexts(interactivePayload).some(hasUnfilledVariables)) {
+      toast.error(t("fillVariablesFirst", { example: "{{n}}" }));
+      return;
+    }
     onSendInteractive(interactivePayload, replyTo?.id);
     setInteractiveOpen(false);
     onClearReply?.();
-  }, [interactivePayload, onSendInteractive, replyTo?.id, onClearReply]);
+  }, [interactivePayload, onSendInteractive, replyTo?.id, onClearReply, t]);
 
   // Persist the current builder payload as a reusable interactive snippet.
   const saveAsQuickReply = useCallback(async () => {
@@ -434,15 +455,16 @@ export function MessageComposer({
   // A picked quick reply: text fills the composer; interactive opens the
   // builder pre-filled so the agent can tweak before sending.
   // From the "/" list, the reply replaces the typed "/search".
-  const handlePickQuickReply = useCallback(
-    (qr: QuickReply, fromSlash = false) => {
-      setQuickReplyOpen(false);
+  const insertQuickReply = useCallback(
+    (qr: QuickReply, fromSlash: boolean, values: Record<number, string>) => {
+      const fill = (text: string) =>
+        fillNumbered(fillPlaceholders(text, { name: contactName }), values);
       if (qr.kind === "interactive" && qr.interactive_payload) {
         if (fromSlash) setText("");
-        openInteractiveBuilder(qr.interactive_payload);
+        openInteractiveBuilder(mapPayloadText(qr.interactive_payload, fill));
         return;
       }
-      const body = fillPlaceholders(qr.content_text ?? "", { name: contactName });
+      const body = fill(qr.content_text ?? "");
       // Separate the snippet from any existing draft with a newline so the
       // words don't run together ("Thanks" + "we'll…" → "Thankswe'll…").
       setText((prev) =>
@@ -462,6 +484,23 @@ export function MessageComposer({
       });
     },
     [openInteractiveBuilder, adjustHeight, contactName],
+  );
+
+  const handlePickQuickReply = useCallback(
+    (qr: QuickReply, fromSlash = false) => {
+      setQuickReplyOpen(false);
+      const texts =
+        qr.kind === "interactive" && qr.interactive_payload
+          ? payloadTexts(qr.interactive_payload)
+          : [qr.content_text ?? ""];
+      const numbers = numberedVariables(...texts);
+      if (numbers.length > 0) {
+        setPendingFill({ qr, fromSlash, numbers });
+        return;
+      }
+      insertQuickReply(qr, fromSlash, {});
+    },
+    [insertQuickReply],
   );
 
   // Arrow keys move through the "/" list, Enter or Tab inserts, Esc closes.
@@ -1074,6 +1113,7 @@ export function MessageComposer({
             <InteractiveBuilder
               value={interactivePayload}
               onChange={setInteractivePayload}
+              allowImageHeader
             />
           </div>
           <DialogFooter>
@@ -1098,6 +1138,27 @@ export function MessageComposer({
       </Dialog>
 
       {/* Quick-reply picker. */}
+      {pendingFill && (
+        <QuickReplyFillDialog
+          title={pendingFill.qr.title}
+          numbers={pendingFill.numbers}
+          preview={(values) => {
+            const fill = (text: string) =>
+              fillNumbered(fillPlaceholders(text, { name: contactName }), values);
+            const qr = pendingFill.qr;
+            return qr.kind === "interactive" && qr.interactive_payload
+              ? fill(qr.interactive_payload.body)
+              : fill(qr.content_text ?? "");
+          }}
+          onCancel={() => setPendingFill(null)}
+          onConfirm={(values) => {
+            const { qr, fromSlash } = pendingFill;
+            setPendingFill(null);
+            insertQuickReply(qr, fromSlash, values);
+          }}
+        />
+      )}
+
       <QuickReplyPicker
         open={quickReplyOpen}
         onOpenChange={setQuickReplyOpen}

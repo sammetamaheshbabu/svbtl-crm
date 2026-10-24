@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fillPlaceholders } from './placeholders';
+import { fillNumbered, fillPlaceholders, hasUnfilledVariables, numberedVariables } from './placeholders';
 
 describe('fillPlaceholders', () => {
   it('fills {name} and {first_name}', () => {
@@ -32,5 +32,26 @@ describe('fillPlaceholders', () => {
   it('treats a phone number as no name', () => {
     expect(fillPlaceholders('Hi {name}, welcome', { name: '919876543210' })).toBe('Hi, welcome');
     expect(fillPlaceholders('Hi {name}', { name: '+91 98765 43210' })).toBe('Hi');
+  });
+});
+
+describe('numbered variables', () => {
+  it('lists each number once, in order', () => {
+    expect(numberedVariables('Hi {{1}}, from {{2}} in {{3}}. {{1}}!', 'Rs. {{4}}')).toEqual([1, 2, 3, 4]);
+    expect(numberedVariables('no variables', null)).toEqual([]);
+  });
+
+  it('fills the given numbers and leaves the rest', () => {
+    expect(fillNumbered('Hi {{1}}, I am {{2}}.', { 1: 'Ravi', 2: '' })).toBe('Hi Ravi, I am {{2}}.');
+    expect(fillNumbered('{{ 1 }} and {{1}}', { 1: 'x' })).toBe('x and x');
+  });
+
+  it('fills Telugu text the same way', () => {
+    expect(fillNumbered('నమస్కారం {{1}} గారు', { 1: 'రవి' })).toBe('నమస్కారం రవి గారు');
+  });
+
+  it('spots leftover variables', () => {
+    expect(hasUnfilledVariables('Rs. {{4}}')).toBe(true);
+    expect(hasUnfilledVariables('Rs. 15,000')).toBe(false);
   });
 });

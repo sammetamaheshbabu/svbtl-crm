@@ -457,7 +457,12 @@
       "interactiveShort": "Botones / lista",
       "aiDraftShort": "Borrador IA",
       "typeMessagePlaceholderShort": "Escribe un mensaje",
-      "enterHint": "Enter para enviar · Shift+Enter para nueva línea"
+      "enterHint": "Enter para enviar · Shift+Enter para nueva línea",
+      "fillVariablesDesc": "Completa los datos de este mensaje.",
+      "fillVariablesPreview": "Vista previa",
+      "fillVariablesCancel": "Cancelar",
+      "fillVariablesUse": "Usar respuesta",
+      "fillVariablesFirst": "Completa cada {example} antes de enviar."
     },
     "bubble": {
       "photo": "Foto",
@@ -2281,7 +2286,8 @@
       "textPlaceholder": "El texto del mensaje que se insertará",
       "cancel": "Cancelar",
       "save": "Guardar",
-      "placeholdersHint": "Escribe {name} o {firstName} y se completará con el nombre del cliente al insertar la respuesta."
+      "placeholdersHint": "Escribe {name} o {firstName} y se completará con el nombre del cliente al insertar la respuesta.",
+      "variablesHint": "Escribe {one}, {two}… para datos que completas cada vez que usas la respuesta."
     }
   },
   "SignupPage": {
@@ -2443,7 +2449,16 @@
     "rowDescriptionPlaceholder": "Descripción (opcional)",
     "addRow": "Agregar fila",
     "addSection": "Agregar sección",
-    "defaultListButton": "Menú"
+    "defaultListButton": "Menú",
+    "headerType": "Encabezado",
+    "headerTypeText": "Texto",
+    "headerTypeImage": "Imagen",
+    "headerImage": "Imagen del encabezado",
+    "uploadImage": "Subir",
+    "imageHint": "JPEG o PNG, hasta 5 MB. Se muestra encima del mensaje.",
+    "imageTypeError": "Usa una imagen JPEG o PNG.",
+    "imageSizeError": "La imagen debe pesar 5 MB o menos.",
+    "imageUploadError": "No se pudo subir la imagen."
   },
   "DashboardShell": {
     "loading": "Cargando..."
