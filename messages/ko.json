@@ -462,7 +462,8 @@
       "fillVariablesPreview": "미리보기",
       "fillVariablesCancel": "취소",
       "fillVariablesUse": "답장 사용",
-      "fillVariablesFirst": "보내기 전에 모든 {example}을 채우세요."
+      "fillVariablesFirst": "보내기 전에 모든 {example}을 채우세요.",
+      "library": "라이브러리"
     },
     "bubble": {
       "photo": "사진",
@@ -3003,5 +3004,20 @@
       "metaApiStatus": "Meta API 오류: {status}",
       "syncFailed": "템플릿을 동기화하지 못했습니다"
     }
+  },
+  "MediaLibrary": {
+    "title": "미디어 라이브러리",
+    "description": "이미 업로드한 파일입니다. 다시 쓸 파일을 고르거나 새로 업로드하세요.",
+    "tabOurs": "우리 파일",
+    "tabReceived": "고객이 보낸 파일",
+    "search": "파일 검색",
+    "upload": "업로드",
+    "button": "라이브러리",
+    "emptyOurs": "아직 업로드한 파일이 없습니다.",
+    "emptyReceived": "아직 고객이 보낸 파일이 없습니다.",
+    "noMatch": "여기에 쓸 수 있는 파일이 없습니다. 헤더 이미지는 5MB 이하의 JPEG 또는 PNG여야 합니다.",
+    "loadMore": "더 보기 ({count}개 남음)",
+    "uploadNotAllowed": "이 파일 형식이나 크기는 여기에 쓸 수 없습니다.",
+    "uploadFailed": "파일을 업로드하지 못했습니다."
   }
 }

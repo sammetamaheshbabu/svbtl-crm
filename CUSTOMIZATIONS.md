@@ -30,13 +30,13 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (72, not counting this file; section letter in brackets):
+Files we changed vs upstream (76, not counting this file; section letter in brackets):
 
 ```
 .gitignore                                                    [E]
 docs/security-and-backup.md                                   [E]
-messages/en.json                                              [A, I, J, K, L, N, O]
-messages/es.json, ko.json, pt.json                            [I, J, K, L, N, O]
+messages/en.json                                              [A, I, J, K, L, N, O, P]
+messages/es.json, ko.json, pt.json                            [I, J, K, L, N, O, P]
 src/app/(auth)/login/page.tsx                                 [B, L]
 src/app/(auth)/reset-password/page.tsx                        [L]
 src/app/(auth)/signup/page.tsx                                [B, L]
@@ -52,20 +52,22 @@ src/app/api/v1/members/route.ts                               [I]  new
 src/app/api/v1/messages/route.ts                              [G, H, J]
 src/app/api/v1/quick-replies/route.ts (+ route.test.ts)       [K]  new
 src/app/api/whatsapp/send/route.ts (+ route.test.ts)          [G, H, I, J]
+src/components/broadcasts/step3-personalize.tsx               [P]
 src/components/contacts/contact-detail-view.tsx               [J]
 src/components/inbox/contact-sidebar.tsx                      [N]
 src/components/inbox/conversation-list.tsx                    [J]
 src/components/inbox/message-bubble.tsx                       [D, G]
-src/components/inbox/message-composer.tsx                     [D, K, O]
+src/components/inbox/message-composer.tsx                     [D, K, O, P]
 src/components/inbox/message-media.tsx                        [D]
-src/components/inbox/message-thread.tsx                       [G, H, I, J, K, N]
+src/components/inbox/message-thread.tsx                       [G, H, I, J, K, N, P]
 src/components/inbox/new-chat-dialog.tsx                      [J]  new
 src/components/inbox/quick-reply-fill-dialog.tsx              [O]  new
 src/components/inbox/quick-reply-picker.tsx                   [K]
-src/components/inbox/template-picker.tsx                      [J]
+src/components/inbox/template-picker.tsx                      [J, P]
+src/components/media/media-library-dialog.tsx                 [P]  new
 src/components/settings/password-form.tsx                     [L]
 src/components/settings/quick-replies-manager.tsx             [K, O]
-src/components/interactive/interactive-builder.tsx            [O]
+src/components/interactive/interactive-builder.tsx            [O, P]
 src/components/interactive/interactive-preview.tsx            [O]
 src/components/settings/settings-rail.tsx                     [C]
 src/components/settings/settings-sections.ts                  [C]
@@ -79,6 +81,7 @@ src/lib/dashboard/agent-scope-migration.test.ts               [M]  new
 src/lib/inbox/assignment-events.ts (+ .test.ts)               [I]  new
 src/lib/quick-replies/placeholders.ts (+ .test.ts)            [K, O]  new
 src/lib/quick-replies/fill-payload.ts (+ .test.ts)            [O]  new
+src/lib/storage/media-library.ts (+ .test.ts)                 [P]  new
 src/lib/webhooks/events.ts                                    [I]
 src/lib/whatsapp/interactive.ts                               [O]
 src/lib/whatsapp/meta-api.ts                                  [O]
@@ -441,6 +444,30 @@ hi (24-hour window), instead of a paid Marketing template.
 **Tests:** `placeholders.test.ts` (numbered), `fill-payload.test.ts`.
 **Upstream-merge risk:** *Medium.* Touches the shared interactive payload and the composer; if
 upstream changes `sendInteractiveButtons` or the builder, keep `headerImageUrl` and the switch.
+
+### P. Media Library: reuse uploaded files
+**Branch:** `media-library` (2026-10-24)
+**Files:** `src/lib/storage/media-library.ts`, `src/components/media/media-library-dialog.tsx`,
+`src/components/inbox/message-composer.tsx`, `message-thread.tsx`, `template-picker.tsx`,
+`src/components/interactive/interactive-builder.tsx`, `src/components/broadcasts/step3-personalize.tsx`,
+`messages/*.json` (`MediaLibrary.*`, `Inbox.composer.library`)
+
+- A picker over the `chat-media` bucket: **Our files** (the account folder plus one level into
+  each subfolder except `inbound`) and **Received from customers** (`inbound`). Search, thumbnails,
+  "Load more", and Upload (adds to Our files and picks it). It only shows files the caller can
+  use (`fitsAccept`: kind, MIME type, Meta's size caps; image headers JPEG/PNG ≤ 5 MB, template
+  video MP4, template document PDF via `acceptForHeader`).
+- Offered in: the composer (📎 menu and the ⊕ sheet), the button-message image header, the
+  template picker's media header, and the broadcast wizard's header media.
+- **Never deletes.** A library pick is staged without a storage `path`; the composer's discard
+  cleanup and the thread's failed-send cleanup only delete when a `path` is set (one-off uploads).
+- No database change: members can list their own account folder (migration 043's chat-media
+  read policy), and the bucket is public so Meta can fetch the links.
+
+**Why:** staff re-uploaded the same brochures and images; now they pick them again.
+**Tests:** `media-library.test.ts` (kinds, names, accept rules, folder walk, inbound tab).
+**Upstream-merge risk:** *Low–Medium.* If upstream changes the composer's draft/cleanup code, keep
+`path` optional and the delete guarded by it.
 
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
 

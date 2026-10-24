@@ -23,6 +23,7 @@ import {
   Plus,
   MessageSquareDashed,
   Zap,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
@@ -70,6 +71,11 @@ import {
 } from "@/lib/quick-replies/placeholders";
 import { mapPayloadText, payloadTexts } from "@/lib/quick-replies/fill-payload";
 import { QuickReplyFillDialog } from "./quick-reply-fill-dialog";
+import { MediaLibraryDialog } from "@/components/media/media-library-dialog";
+import type { LibraryAccept, LibraryFile } from "@/lib/storage/media-library";
+
+/** Anything the composer can send as an attachment. */
+const ATTACHMENT_ACCEPT: LibraryAccept = { kinds: ["image", "video", "document", "audio"] };
 
 /** Media content types an agent can send from the composer. */
 export type ComposerMediaKind = "image" | "video" | "document" | "audio";
@@ -88,8 +94,11 @@ export interface SendMediaPayload {
   kind: ComposerMediaKind;
   /** Public chat-media URL Meta fetches at send time. */
   mediaUrl: string;
-  /** Storage object path — lets the caller GC the object if the send fails. */
-  path: string;
+  /**
+   * Storage object path of a one-off upload — lets the caller GC it if the
+   * send fails. Absent for a Media Library file, which must never be deleted.
+   */
+  path?: string;
   /** Optional caption (image/video/document only). */
   caption?: string;
   /** Original file name — surfaced to the recipient for documents. */
@@ -118,8 +127,9 @@ const PICKER_ACCEPT: Record<"image" | "video" | "document", string> = {
 interface MediaDraft {
   kind: ComposerMediaKind;
   mediaUrl: string;
-  /** Storage path — used to GC the object if the draft is discarded. */
-  path: string;
+  /** Storage path of a one-off upload, GC'd if the draft is discarded.
+   *  Absent for a Media Library file (shared, never deleted). */
+  path?: string;
   filename: string;
   caption: string;
 }
@@ -193,6 +203,7 @@ export function MessageComposer({
   // Narrow composer: every action lives in one sheet, so the message box
   // keeps the whole row.
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   // A picked quick reply with {{1}}, {{2}}… waiting for its values.
   const [pendingFill, setPendingFill] = useState<{
     qr: QuickReply;
@@ -563,6 +574,14 @@ export function MessageComposer({
     [removeStaged, t],
   );
 
+  const pickFromLibrary = useCallback(
+    (file: LibraryFile) => {
+      removeStaged(draftRef.current?.path);
+      setDraft({ kind: file.kind, mediaUrl: file.url, filename: file.name, caption: "" });
+    },
+    [removeStaged],
+  );
+
   const handlePicked = useCallback(
     (kind: "image" | "video" | "document", file: File | undefined) => {
       if (file) void stageUpload(kind, file);
@@ -884,6 +903,10 @@ export function MessageComposer({
                 <Mic className="mr-2 h-4 w-4" />
                 {t("voiceNote")}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLibraryOpen(true)}>
+                <Library className="mr-2 h-4 w-4" />
+                {t("library")}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1047,6 +1070,14 @@ export function MessageComposer({
                 run: () => void startRecording(),
               },
               {
+                key: "library",
+                icon: Library,
+                label: t("library"),
+                tone: "bg-orange-500/15 text-orange-500",
+                disabled: inputsDisabled || busy,
+                run: () => setLibraryOpen(true),
+              },
+              {
                 key: "quick",
                 icon: Zap,
                 label: t("quickReplies"),
@@ -1138,6 +1169,13 @@ export function MessageComposer({
       </Dialog>
 
       {/* Quick-reply picker. */}
+      <MediaLibraryDialog
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        accept={ATTACHMENT_ACCEPT}
+        onPick={pickFromLibrary}
+      />
+
       {pendingFill && (
         <QuickReplyFillDialog
           title={pendingFill.qr.title}

@@ -19,6 +19,8 @@ import {
 } from "@/lib/whatsapp/interactive";
 import { InteractivePreview } from "./interactive-preview";
 import { uploadAccountMedia, MEDIA_MAX_BYTES_BY_KIND } from "@/lib/storage/upload-media";
+import { MediaLibraryButton } from "@/components/media/media-library-dialog";
+import { acceptForHeader } from "@/lib/storage/media-library";
 
 // ------------------------------------------------------------
 // Blank payload factories — used to seed a fresh builder and to
@@ -218,6 +220,12 @@ export function InteractiveBuilder({
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                   {t("uploadImage")}
                 </Button>
+                <MediaLibraryButton
+                  accept={acceptForHeader("image")!}
+                  onPick={(file) =>
+                    setField({ header_image_url: file.url, header: undefined } as Partial<InteractiveButtonsPayload>)
+                  }
+                />
               </div>
               <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
                 <ImageIcon className="h-3 w-3" />

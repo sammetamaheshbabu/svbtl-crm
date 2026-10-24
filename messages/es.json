@@ -462,7 +462,8 @@
       "fillVariablesPreview": "Vista previa",
       "fillVariablesCancel": "Cancelar",
       "fillVariablesUse": "Usar respuesta",
-      "fillVariablesFirst": "Completa cada {example} antes de enviar."
+      "fillVariablesFirst": "Completa cada {example} antes de enviar.",
+      "library": "Biblioteca"
     },
     "bubble": {
       "photo": "Foto",
@@ -3003,5 +3004,20 @@
       "metaApiStatus": "Error de la API de Meta: {status}",
       "syncFailed": "Error al sincronizar las plantillas"
     }
+  },
+  "MediaLibrary": {
+    "title": "Biblioteca de archivos",
+    "description": "Archivos ya subidos. Elige uno para volver a usarlo o sube uno nuevo.",
+    "tabOurs": "Nuestros archivos",
+    "tabReceived": "Recibidos de clientes",
+    "search": "Buscar archivos",
+    "upload": "Subir",
+    "button": "Biblioteca",
+    "emptyOurs": "Aún no hay archivos subidos.",
+    "emptyReceived": "Aún no hay archivos de clientes.",
+    "noMatch": "Ningún archivo sirve aquí. Las imágenes de encabezado deben ser JPEG o PNG de hasta 5 MB.",
+    "loadMore": "Cargar más ({count} restantes)",
+    "uploadNotAllowed": "Este tipo o tamaño de archivo no se puede usar aquí.",
+    "uploadFailed": "No se pudo subir el archivo."
   }
 }

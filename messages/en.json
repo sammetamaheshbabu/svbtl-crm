@@ -462,7 +462,8 @@
       "fillVariablesPreview": "Preview",
       "fillVariablesCancel": "Cancel",
       "fillVariablesUse": "Use reply",
-      "fillVariablesFirst": "Fill in every {example} before sending."
+      "fillVariablesFirst": "Fill in every {example} before sending.",
+      "library": "Library"
     },
     "bubble": {
       "photo": "Photo",
@@ -3003,5 +3004,20 @@
       "metaApiStatus": "Meta API error: {status}",
       "syncFailed": "Failed to sync templates"
     }
+  },
+  "MediaLibrary": {
+    "title": "Media library",
+    "description": "Files already uploaded. Pick one to use it again, or upload a new one.",
+    "tabOurs": "Our files",
+    "tabReceived": "Received from customers",
+    "search": "Search files",
+    "upload": "Upload",
+    "button": "Library",
+    "emptyOurs": "No files uploaded yet.",
+    "emptyReceived": "No files received from customers yet.",
+    "noMatch": "No files fit here. Images for headers must be JPEG or PNG up to 5 MB.",
+    "loadMore": "Load more ({count} left)",
+    "uploadNotAllowed": "This file type or size can't be used here.",
+    "uploadFailed": "Couldn't upload the file."
   }
 }
