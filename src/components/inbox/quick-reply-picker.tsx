@@ -13,11 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import type { QuickReply } from "@/types";
 import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive";
+import { fillPlaceholders } from "@/lib/quick-replies/placeholders";
 
 interface QuickReplyPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPick: (qr: QuickReply) => void;
+  /** Previews show {name} filled in, as it will be inserted. */
+  contactName?: string | null;
 }
 
 /**
@@ -29,6 +32,7 @@ export function QuickReplyPicker({
   open,
   onOpenChange,
   onPick,
+  contactName,
 }: QuickReplyPickerProps) {
   const t = useTranslations("Inbox.composer");
   const [items, setItems] = useState<QuickReply[]>([]);
@@ -75,7 +79,8 @@ export function QuickReplyPicker({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              autoFocus
+              // Phones: don't open the keyboard over the list straight away.
+              autoFocus={window.matchMedia?.("(pointer: fine)").matches ?? true}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("quickRepliesSearch")}
@@ -113,7 +118,7 @@ export function QuickReplyPicker({
                       <span className="block truncate text-xs text-muted-foreground">
                         {qr.kind === "interactive" && qr.interactive_payload
                           ? interactivePayloadPreviewText(qr.interactive_payload)
-                          : qr.content_text}
+                          : fillPlaceholders(qr.content_text ?? "", { name: contactName })}
                       </span>
                     </span>
                   </button>

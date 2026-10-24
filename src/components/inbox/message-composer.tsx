@@ -39,6 +39,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useCan } from "@/hooks/use-can";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -177,6 +183,9 @@ export function MessageComposer({
     useState<InteractiveMessagePayload>(blankButtonsPayload);
   const [savingQuickReply, setSavingQuickReply] = useState(false);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
+  // Narrow composer: every action lives in one sheet, so the message box
+  // keeps the whole row.
+  const [actionsOpen, setActionsOpen] = useState(false);
   // "/" at the start of the message lists quick replies by title. Reloaded
   // each time the list opens, so replies added in Settings show up; Esc
   // hides it until the text changes.
@@ -640,7 +649,10 @@ export function MessageComposer({
   // ---- Render --------------------------------------------------------
 
   return (
-    <div className="relative border-t border-border bg-card p-3">
+    // @container: the action buttons go inline only when the composer itself
+    // is wide enough (a phone, or a desktop thread squeezed between the list
+    // and the contact panel, gets the single ⊕ button instead).
+    <div className="@container relative border-t border-border bg-card p-3">
       {slashOpen && (
         <div className="absolute inset-x-3 bottom-full z-20 mb-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
           <p className="border-b border-border px-3 py-1.5 text-[11px] text-muted-foreground">
@@ -779,11 +791,24 @@ export function MessageComposer({
           </Button>
         </div>
       ) : (
-        <div className="flex flex-wrap items-end gap-2">
-          {/* Action buttons. On mobile this group wraps to its own row
-              below the textarea (basis-full + order-2) so the input gets
-              the full width; on sm+ it sits inline before the textarea. */}
-          <div className="order-2 flex basis-full items-end gap-2 sm:order-1 sm:basis-auto">
+        <div className="flex items-end gap-2">
+          {/* Narrow composer: one button opens every action in a sheet, so
+              the message box gets the row. */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={readOnly}
+            aria-label={t("actionsButton")}
+            title={readOnly ? t("readOnlyTitle") : t("actionsButton")}
+            onClick={() => setActionsOpen(true)}
+            className="h-10 w-10 shrink-0 rounded-full bg-muted p-0 text-foreground hover:bg-muted/80 @xl:hidden"
+          >
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+          </Button>
+
+          {/* Wide composer: the actions sit inline before the message box. */}
+          <div className="hidden items-end gap-2 @xl:flex">
           {/* Attach menu — photo / video / document / voice. */}
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -906,16 +931,21 @@ export function MessageComposer({
                 ? t("readOnlyPlaceholder")
                 : sessionExpired
                   ? t("sessionExpiredPlaceholder")
-                  : t("typeMessagePlaceholder")
+                  : enterSends
+                    ? t("typeMessagePlaceholder")
+                    // Touch: Enter adds a line, so no Shift+Enter hint.
+                    : t("typeMessagePlaceholderShort")
             }
             disabled={sessionExpired || readOnly}
             rows={1}
             // Textarea keeps its own inline title — the GatedButton
             // wrapping pattern doesn't apply to non-button inputs.
             // The placeholder text also surfaces the read-only state.
-            title={readOnly ? t("readOnlyTitle") : undefined}
+            title={readOnly ? t("readOnlyTitle") : enterSends ? t("enterHint") : undefined}
             className={cn(
-              "order-1 min-w-0 flex-1 resize-none rounded-xl border border-border bg-muted px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none transition-colors focus:border-primary/50 sm:order-2",
+              // 16px text on phones stops iOS zooming in on focus; the
+              // scrollbar stays hidden (the box still scrolls past 4 lines).
+              "min-w-0 flex-1 resize-none overflow-y-auto rounded-2xl border border-border bg-muted px-4 py-2.5 text-base leading-5 text-foreground placeholder-muted-foreground outline-none transition-colors [scrollbar-width:none] focus:border-primary/50 sm:rounded-xl sm:text-sm [&::-webkit-scrollbar]:hidden",
               (sessionExpired || readOnly) && "cursor-not-allowed opacity-50"
             )}
           />
@@ -926,21 +956,113 @@ export function MessageComposer({
             gateReason={tGate("reasons.sendMessages")}
             disabled={!text.trim() || sessionExpired || sending}
             onClick={handleSend}
-            className="order-1 h-9 w-9 shrink-0 bg-primary p-0 hover:bg-primary/90 disabled:opacity-40 sm:order-3"
+            className="h-10 w-10 shrink-0 rounded-full bg-primary p-0 hover:bg-primary/90 disabled:opacity-40 sm:h-9 sm:w-9 sm:rounded-md"
           >
             <Send className="h-4 w-4" />
           </GatedButton>
         </div>
       )}
 
-      {/* Hint sits outside the flex row so its height doesn't push
-          `items-end` buttons below the textarea. Indented to line up
-          under the textarea left edge. */}
-      {!draft && !recording && (
-        <p className="mt-1 pl-1 text-[10px] text-muted-foreground sm:pl-[5.5rem]">
-          {t("draftHint")}
-        </p>
-      )}
+      {/* All composer actions in one sheet: from the bottom on phones, a
+          centred card on wider screens. */}
+      <Sheet open={actionsOpen} onOpenChange={setActionsOpen}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))] sm:bottom-4! sm:mx-auto sm:max-w-md sm:rounded-2xl sm:border"
+        >
+          <SheetHeader className="pb-0">
+            <SheetTitle>{t("actionsSheetTitle")}</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-4 gap-x-2 gap-y-4 px-4 pb-2">
+            {[
+              {
+                key: "photo",
+                icon: ImageIcon,
+                label: t("photo"),
+                tone: "bg-sky-500/15 text-sky-500",
+                disabled: inputsDisabled || busy,
+                run: () => imageInputRef.current?.click(),
+              },
+              {
+                key: "video",
+                icon: Video,
+                label: t("video"),
+                tone: "bg-rose-500/15 text-rose-500",
+                disabled: inputsDisabled || busy,
+                run: () => videoInputRef.current?.click(),
+              },
+              {
+                key: "document",
+                icon: FileText,
+                label: t("document"),
+                tone: "bg-indigo-500/15 text-indigo-500",
+                disabled: inputsDisabled || busy,
+                run: () => documentInputRef.current?.click(),
+              },
+              {
+                key: "voice",
+                icon: Mic,
+                label: t("voiceNote"),
+                tone: "bg-emerald-500/15 text-emerald-500",
+                disabled: inputsDisabled || busy,
+                run: () => void startRecording(),
+              },
+              {
+                key: "quick",
+                icon: Zap,
+                label: t("quickReplies"),
+                tone: "bg-amber-500/15 text-amber-500",
+                disabled: inputsDisabled,
+                run: () => setQuickReplyOpen(true),
+              },
+              {
+                key: "template",
+                icon: LayoutTemplate,
+                label: t("templates"),
+                tone: "bg-primary/15 text-primary",
+                disabled: readOnly,
+                run: onOpenTemplates,
+              },
+              {
+                key: "interactive",
+                icon: MessageSquareDashed,
+                label: t("interactiveShort"),
+                tone: "bg-teal-500/15 text-teal-500",
+                disabled: inputsDisabled,
+                run: () => openInteractiveBuilder(),
+              },
+              {
+                key: "ai",
+                icon: Sparkles,
+                label: t("aiDraftShort"),
+                tone: "bg-fuchsia-500/15 text-fuchsia-500",
+                disabled: readOnly || drafting,
+                run: () => void handleDraft(),
+              },
+            ].map(({ key, icon: Icon, label, tone, disabled, run }) => (
+              <button
+                key={key}
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                  // Run first: a file picker must open inside the tap.
+                  run();
+                  setActionsOpen(false);
+                }}
+                className="flex flex-col items-center gap-1.5 rounded-xl p-1 text-center disabled:opacity-40"
+              >
+                <span className={cn("flex h-12 w-12 items-center justify-center rounded-full", tone)}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="text-xs leading-tight text-popover-foreground">{label}</span>
+              </button>
+            ))}
+          </div>
+          {sessionExpired && !readOnly && (
+            <p className="px-4 pb-2 text-xs text-muted-foreground">{t("sessionExpiredHint")}</p>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Interactive-message builder dialog. */}
       <Dialog open={interactiveOpen} onOpenChange={setInteractiveOpen}>
@@ -980,6 +1102,7 @@ export function MessageComposer({
         open={quickReplyOpen}
         onOpenChange={setQuickReplyOpen}
         onPick={handlePickQuickReply}
+        contactName={contactName}
       />
     </div>
   );

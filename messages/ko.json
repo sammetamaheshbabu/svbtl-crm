@@ -226,12 +226,11 @@
       "noCustomerMessages": "고객 메시지 없음"
     },
     "composer": {
-      "draftHint": "✨를 눌러 AI로 답장 초안을 작성하세요 — 보내기 전에 수정할 수 있습니다",
       "sessionExpiredHint": "24시간 세션이 만료되었습니다. 다시 연결하려면 템플릿을 사용하세요.",
       "templates": "템플릿",
       "readOnlyPlaceholder": "읽기 전용 — 뷰어는 열람만 가능하고 답장할 수 없습니다",
       "sessionExpiredPlaceholder": "세션 만료 - 템플릿을 사용하세요",
-      "typeMessagePlaceholder": "메시지를 입력하거나 /로 빠른 답장 열기 (줄바꿈은 Shift+Enter)",
+      "typeMessagePlaceholder": "메시지를 입력하거나 /로 빠른 답장 열기",
       "readOnlyTitle": "읽기 전용 — 현재 역할로는 메시지를 보낼 수 없습니다",
       "recording": "녹음 중… {current} / {max}",
       "cancel": "취소",
@@ -272,7 +271,13 @@
       "quickRepliesButton": "빠른 답장 (또는 / 입력)",
       "quickRepliesSearch": "빠른 답장 검색",
       "slashHint": "빠른 답장 — ↑↓ 선택, Enter 삽입, Esc 닫기",
-      "slashNoMatch": "일치하는 빠른 답장이 없습니다."
+      "slashNoMatch": "일치하는 빠른 답장이 없습니다.",
+      "actionsButton": "더 보기",
+      "actionsSheetTitle": "메시지에 추가",
+      "interactiveShort": "버튼 / 목록",
+      "aiDraftShort": "AI 초안",
+      "typeMessagePlaceholderShort": "메시지 입력",
+      "enterHint": "Enter로 보내기 · 줄바꿈은 Shift+Enter"
     },
     "bubble": {
       "photo": "사진",
