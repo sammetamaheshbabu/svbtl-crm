@@ -182,7 +182,8 @@
       "clearAll": "Limpar tudo",
       "noConversations": "Nenhuma conversa encontrada",
       "noMessagesYet": "Nenhuma mensagem ainda",
-      "unknown": "Desconhecido"
+      "unknown": "Desconhecido",
+      "newChat": "Nova conversa"
     },
     "messageThread": {
       "backToConversations": "Voltar às conversas",
@@ -230,7 +231,7 @@
       "templates": "Modelos",
       "readOnlyPlaceholder": "Somente leitura — visualizadores podem navegar, mas não responder",
       "sessionExpiredPlaceholder": "Sessão expirada - use um modelo",
-      "typeMessagePlaceholder": "Digite uma mensagem... (Shift+Enter para nova linha)",
+      "typeMessagePlaceholder": "Digite uma mensagem, ou / para respostas rápidas (Shift+Enter para nova linha)",
       "readOnlyTitle": "Somente leitura — sua função não pode enviar mensagens",
       "recording": "Gravando… {current} / {max}",
       "cancel": "Cancelar",
@@ -267,7 +268,11 @@
         "document": "documento",
         "audio": "áudio"
       },
-      "uploadFailed": "Falha no upload."
+      "uploadFailed": "Falha no upload.",
+      "quickRepliesButton": "Respostas rápidas (ou digite /)",
+      "quickRepliesSearch": "Buscar respostas rápidas",
+      "slashHint": "Respostas rápidas — ↑↓ para escolher, Enter para inserir, Esc para fechar",
+      "slashNoMatch": "Nenhuma resposta rápida corresponde."
     },
     "bubble": {
       "photo": "Foto",
@@ -339,7 +344,10 @@
       "send": "Enviar modelo",
       "headerVarLabel": "Cabeçalho {var}",
       "bodyVarLabel": "Corpo {var}",
-      "urlButtonVarLabel": "Botão de URL \"{text}\" — valor para {var}"
+      "urlButtonVarLabel": "Botão de URL \"{text}\" — valor para {var}",
+      "headerMediaLabel": "Link do {type} do cabeçalho",
+      "headerMediaHint": "Um link público para o arquivo exibido no topo da mensagem.",
+      "headerMediaInvalid": "Informe um link que comece com https://"
     },
     "sidebar": {
       "contactInfo": "Informações do contato",
@@ -359,6 +367,25 @@
       "resumed": "IA retomada.",
       "updateError": "Não foi possível atualizar o assistente de IA.",
       "networkError": "Não foi possível conectar ao servidor."
+    },
+    "newChat": {
+      "title": "Nova conversa",
+      "description": "Envie mensagem a um cliente que ainda não nos escreveu. O WhatsApp só permite um modelo aprovado como primeira mensagem.",
+      "numberLabel": "Número de celular",
+      "countryLabel": "Código do país",
+      "otherCountry": "Outro",
+      "numberHint": "Escolha o código do país e digite o número.",
+      "numberInvalid": "Este número de celular não parece válido.",
+      "existingContact": "Já é contato: {name}. O modelo vai para a conversa dele.",
+      "nameLabel": "Nome do cliente (opcional)",
+      "namePlaceholder": "ex.: Ravi Kumar",
+      "optInLabel": "Este cliente concordou em receber mensagens de WhatsApp da SVB Tech Labs.",
+      "alreadyOptedIn": "Consentimento registrado em {date}.",
+      "templateOnlyNote": "Você pode escrever livremente quando o cliente responder.",
+      "chooseTemplate": "Escolher modelo",
+      "cancel": "Cancelar",
+      "sent": "Modelo enviado",
+      "failed": "Não foi possível enviar: {reason}"
     }
   },
   "Contacts": {
@@ -2032,7 +2059,8 @@
       "kindInteractive": "Interativa",
       "textPlaceholder": "O texto da mensagem a inserir",
       "cancel": "Cancelar",
-      "save": "Salvar"
+      "save": "Salvar",
+      "placeholdersHint": "Escreva {name} ou {firstName} e o nome do cliente é preenchido ao inserir a resposta."
     }
   },
   "SignupPage": {
@@ -2200,7 +2228,9 @@
     "loading": "Carregando..."
   },
   "UiPrimitives": {
-    "close": "Fechar"
+    "close": "Fechar",
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Ocultar senha"
   },
   "GatedButton": {
     "readOnly": "Somente leitura — sua função não pode {action}",
@@ -2697,9 +2727,11 @@
       "dbUpsertFailed": "Reação enviada à Meta, mas falhou ao salvá-la no banco de dados"
     },
     "send": {
-      "idsRequired": "É necessário informar conversation_id ou contact_id, além de message_type",
+      "idsRequired": "É necessário informar conversation_id, contact_id ou phone, além de message_type",
       "contactNotFound": "Contato não encontrado",
-      "openConversationFailed": "Falha ao abrir uma conversa com este contato"
+      "openConversationFailed": "Falha ao abrir uma conversa com este contato",
+      "newChatTemplateOnly": "A new chat must start with an approved template",
+      "assignedElsewhere": "This chat is assigned to someone else"
     },
     "templates": {
       "invalidId": "ID de modelo inválido.",

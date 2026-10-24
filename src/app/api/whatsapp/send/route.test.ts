@@ -162,7 +162,14 @@ vi.mock('@/lib/whatsapp/meta-api', () => ({
   sendMediaMessage: vi.fn(),
 }))
 
+const { resolveStartChat, recordOptIn } = vi.hoisted(() => ({
+  resolveStartChat: vi.fn(),
+  recordOptIn: vi.fn(async () => {}),
+}))
+vi.mock('@/lib/whatsapp/start-chat', () => ({ resolveStartChat, recordOptIn }))
+
 import { POST } from './route'
+import { SendMessageError } from '@/lib/whatsapp/send-message'
 
 function postContactTemplate(overrides: Record<string, unknown> = {}) {
   return POST(
@@ -314,5 +321,78 @@ describe('POST /api/whatsapp/send — role enforcement', () => {
 
     expect(res.status).toBe(200)
     expect(sendTemplateMessage).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('POST /api/whatsapp/send — phone path (New chat)', () => {
+  beforeEach(() => {
+    conversationInserts.length = 0
+    messageInserts.length = 0
+    existingConversation = {
+      id: 'conv-existing',
+      account_id: 'acct-1',
+      contact_id: 'contact-1',
+      contact: CONTACT,
+    }
+    createdConversation = null
+    contactRow = CONTACT
+    callerRole = 'agent'
+    supabaseMock = makeSupabaseMock()
+    sendTemplateMessage.mockClear()
+    resolveStartChat.mockReset().mockResolvedValue({
+      conversationId: 'conv-existing',
+      contactId: 'contact-1',
+      recordOptIn: true,
+    })
+    recordOptIn.mockClear()
+  })
+
+  function postPhone(overrides: Record<string, unknown> = {}) {
+    return postContactTemplate({
+      contact_id: undefined,
+      phone: '+15551234567',
+      name: 'Ravi',
+      opt_in_confirmed: true,
+      ...overrides,
+    })
+  }
+
+  it('sends the template, records the opt-in and returns the chat', async () => {
+    const res = await postPhone()
+    const json = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(json.conversation_id).toBe('conv-existing')
+    expect(resolveStartChat).toHaveBeenCalledWith(expect.anything(), 'acct-1', {
+      phone: '+15551234567',
+      name: 'Ravi',
+      optInConfirmed: true,
+      senderId: 'user-1',
+      senderRole: 'agent',
+    })
+    expect(sendTemplateMessage).toHaveBeenCalledTimes(1)
+    expect(recordOptIn).toHaveBeenCalledWith(expect.anything(), 'acct-1', 'contact-1', 'user-1')
+  })
+
+  it('refuses free text to a new number', async () => {
+    const res = await postPhone({ message_type: 'text', content_text: 'Hi' })
+
+    expect(res.status).toBe(400)
+    expect(resolveStartChat).not.toHaveBeenCalled()
+    expect(sendTemplateMessage).not.toHaveBeenCalled()
+  })
+
+  it('passes on a refusal before anything reaches Meta', async () => {
+    resolveStartChat.mockRejectedValue(
+      new SendMessageError('forbidden', "Mehveen is already handling this customer's chat", 403)
+    )
+
+    const res = await postPhone()
+    const json = await res.json()
+
+    expect(res.status).toBe(403)
+    expect(json.error).toContain('Mehveen')
+    expect(sendTemplateMessage).not.toHaveBeenCalled()
+    expect(recordOptIn).not.toHaveBeenCalled()
   })
 })

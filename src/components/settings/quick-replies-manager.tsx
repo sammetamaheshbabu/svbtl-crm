@@ -213,12 +213,15 @@ export function QuickRepliesManager() {
                 />
               </div>
               {draft.kind === "text" ? (
-                <Textarea
-                  value={draft.content_text}
-                  onChange={(e) => setDraft({ ...draft, content_text: e.target.value })}
-                  placeholder={t("textPlaceholder")}
-                  className="min-h-28 bg-muted text-foreground"
-                />
+                <div>
+                  <Textarea
+                    value={draft.content_text}
+                    onChange={(e) => setDraft({ ...draft, content_text: e.target.value })}
+                    placeholder={t("textPlaceholder")}
+                    className="min-h-28 bg-muted text-foreground"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">{t("placeholdersHint", { name: "{name}", firstName: "{first_name}" })}</p>
+                </div>
               ) : (
                 <InteractiveBuilder
                   value={draft.interactive_payload}

@@ -26,7 +26,9 @@
 //     "sender_user_id": "<uuid>",            // optional, the team member sending; must be in this account.
 //                                            // An agent may not send into a chat assigned to someone
 //                                            // else (403); replying to an unassigned chat assigns it to them.
-//     "name": "Jane Doe"                     // optional, names a newly-created contact
+//     "name": "Jane Doe",                    // optional, names a newly-created contact
+//     "opt_in_confirmed": true               // optional, the customer agreed to receive WhatsApp
+//                                            // messages from us; recorded on the contact (first time only)
 //   }
 //
 // Response (201):
@@ -44,6 +46,7 @@ import {
 } from '@/lib/whatsapp/send-message';
 import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive';
 import { resolveSender } from '@/lib/api/v1/sender';
+import { recordOptIn } from '@/lib/whatsapp/start-chat';
 
 export async function POST(request: Request) {
   try {
@@ -136,6 +139,10 @@ export async function POST(request: Request) {
         senderRole: sender?.role ?? null,
       }
     );
+
+    if (body.opt_in_confirmed === true) {
+      await recordOptIn(ctx.supabase, ctx.accountId, resolved.contactId, sender?.id ?? null);
+    }
 
     return ok(
       {

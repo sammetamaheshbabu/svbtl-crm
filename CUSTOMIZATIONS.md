@@ -11,7 +11,7 @@ document records **every change we made on top of upstream and why**, so that:
 | Upstream | `https://github.com/ArnasDon/wacrm` (remote: `upstream`) |
 | This fork | `https://github.com/sammetamaheshbabu/svbtl-crm` (remote: `origin`) |
 | Fork point (merge-base) | `27c6bdf` |
-| Last reviewed | 2026-10-24 — fork is 14 commits (20 with merges) ahead of the fork point `27c6bdf` |
+| Last reviewed | 2026-10-24 — fork is 16 commits (24 with merges) ahead of the fork point `27c6bdf` |
 
 > **Scope.** This file documents **code** changes (tracked in git) plus the **deployment
 > configuration** we rely on (not in git). It intentionally contains **no secrets** — tokens,
@@ -30,15 +30,17 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (37, not counting this file; section letter in brackets):
+Files we changed vs upstream (55, not counting this file; section letter in brackets):
 
 ```
 .gitignore                                                    [E]
 docs/security-and-backup.md                                   [E]
-messages/en.json                                              [A, I]
-messages/es.json, ko.json, pt.json                            [I]
-src/app/(auth)/login/page.tsx                                 [B]
-src/app/(auth)/signup/page.tsx                                [B]
+messages/en.json                                              [A, I, J, K, L]
+messages/es.json, ko.json, pt.json                            [I, J, K, L]
+src/app/(auth)/login/page.tsx                                 [B, L]
+src/app/(auth)/reset-password/page.tsx                        [L]
+src/app/(auth)/signup/page.tsx                                [B, L]
+src/app/(dashboard)/inbox/page.tsx                            [J]
 src/app/(dashboard)/settings/page.tsx                         [C]
 src/app/layout.tsx                                            [A]
 src/app/api/conversations/[conversationId]/assign/route.ts    [I]  new
@@ -47,22 +49,34 @@ src/app/api/v1/conversations/[id]/messages/route.ts           [G]
 src/app/api/v1/conversations/[id]/route.ts                    [I]  new
 src/app/api/v1/conversations/route.ts                         [H]
 src/app/api/v1/members/route.ts                               [I]  new
-src/app/api/v1/messages/route.ts                              [G, H]
-src/app/api/whatsapp/send/route.ts (+ route.test.ts)          [G, H, I]
+src/app/api/v1/messages/route.ts                              [G, H, J]
+src/app/api/v1/quick-replies/route.ts (+ route.test.ts)       [K]  new
+src/app/api/whatsapp/send/route.ts (+ route.test.ts)          [G, H, I, J]
+src/components/contacts/contact-detail-view.tsx               [J]
+src/components/inbox/conversation-list.tsx                    [J]
 src/components/inbox/message-bubble.tsx                       [G]
-src/components/inbox/message-composer.tsx                     [D]
-src/components/inbox/message-thread.tsx                       [G, H, I]
+src/components/inbox/message-composer.tsx                     [D, K]
+src/components/inbox/message-thread.tsx                       [G, H, I, J, K]
+src/components/inbox/new-chat-dialog.tsx                      [J]  new
+src/components/inbox/quick-reply-picker.tsx                   [K]
+src/components/inbox/template-picker.tsx                      [J]
+src/components/settings/password-form.tsx                     [L]
+src/components/settings/quick-replies-manager.tsx             [K]
 src/components/settings/settings-rail.tsx                     [C]
 src/components/settings/settings-sections.ts                  [C]
+src/components/ui/password-input.tsx                          [L]  new
 src/lib/api/v1/conversations.ts (+ .test.ts)                  [F, G, H, I]
 src/lib/api/v1/sender.ts (+ .test.ts)                         [G, H]  new
 src/lib/conversations/assign.ts (+ .test.ts)                  [I]  new
 src/lib/inbox/assignment-events.ts (+ .test.ts)               [I]  new
+src/lib/quick-replies/placeholders.ts (+ .test.ts)            [K]  new
 src/lib/webhooks/events.ts                                    [I]
 src/lib/whatsapp/send-message.ts                              [G, H, I]
 src/lib/whatsapp/send-message.assignment.test.ts              [H, I]  new
+src/lib/whatsapp/start-chat.ts (+ .test.ts)                   [J]  new
 supabase/migrations/047_agent_conversation_visibility.sql     [H]  new
 supabase/migrations/048_conversation_assignments.sql          [I]  new
+supabase/migrations/049_contact_whatsapp_opt_in.sql           [J]  new
 ```
 
 ### A. Branding → "SVBTL CRM"
@@ -251,6 +265,89 @@ call them. If upstream changes the picker, keep it going through the assign rout
 assignee picker and claim on reply call `assign_conversation()`.
 **Consumer:** the mobile app shows the history, assigns from the chat, and alerts the new owner.
 
+### J. New chat: message a new number with a template
+**Branch:** `new-chat-quick-replies` (2026-10-24)
+**Files:** `supabase/migrations/049_contact_whatsapp_opt_in.sql`, `src/lib/whatsapp/start-chat.ts`,
+`src/app/api/whatsapp/send/route.ts`, `src/components/inbox/new-chat-dialog.tsx`,
+`src/components/inbox/conversation-list.tsx`, `src/app/(dashboard)/inbox/page.tsx`,
+`src/components/inbox/template-picker.tsx`, `src/components/inbox/message-thread.tsx`,
+`src/components/contacts/contact-detail-view.tsx`, `src/app/api/v1/messages/route.ts`,
+`messages/*.json` (`Inbox.newChat`, `Api.send`)
+
+- **Inbox → New chat** (next to the search box, for anyone who can send): country code (+91 by
+  default), mobile number, optional name, and a required tick "This customer agreed to receive
+  WhatsApp messages from SVB Tech Labs". Then the usual template picker: approved templates only,
+  variables filled in. The new chat opens in the inbox.
+- **Send route:** `POST /api/whatsapp/send` takes `phone` (+ `name`, `opt_in_confirmed`) besides
+  `conversation_id` / `contact_id`. Only `message_type: 'template'` on this path. `resolveStartChat`
+  checks the number, the opt-in and the assignee on the service role, then reuses
+  `resolveConversationByPhone`, so an existing customer's number goes into their existing chat and
+  their name is kept. An agent can't start a chat another member is handling (403 naming them);
+  a new chat an agent starts is claimed by them, as with any reply. The response now includes
+  `conversation_id` on every path.
+- **Opt-in (migration 049):** `contacts.whatsapp_opt_in_at` / `whatsapp_opt_in_by`, set after a
+  successful send, first confirmation only. Once recorded the dialog shows "Opt-in recorded on …"
+  instead of the tick. `POST /api/v1/messages` takes `opt_in_confirmed: true` and records it the
+  same way (by `sender_user_id`, if given).
+- **Media headers:** the template picker asks for a link to the header image/video/document when
+  the template has none stored (true of templates synced from Meta), in the inbox, Contact detail
+  and New chat alike.
+- Also fixed: an agent sending a template from Contact detail to a customer whose chat belongs to
+  someone else got a 500; now a 403 "assigned to someone else".
+- Also fixed: below the desktop breakpoint a long message preview widened the conversation list
+  past the screen (pushing the New chat button out of view); the list pane now has `min-w-0`.
+- Meta's sample `hello_world` template shows as approved but Meta refuses it from a live number
+  ("only from the Public Test Numbers"); use one of our own templates.
+
+**Why:** the team can only reply today; they need to reach a new customer first. Meta allows only
+an approved template as the first message, and requires the customer's opt-in.
+**Tests:** `start-chat.test.ts` (number, opt-in, assignee, name kept), `send/route.test.ts` (phone
+path: template only, opt-in recorded, refusal before Meta).
+**Upstream-merge risk:** *Medium.* Adds a path to the send route and a field to the template picker;
+if upstream changes either, keep `phone` going through `resolveStartChat`.
+**Applying the migration:** run 049 in the Supabase SQL editor **before** deploying this code — the
+send route writes the new columns.
+**Consumer:** the mobile app can start chats through `POST /api/v1/messages` with `to` + a
+template, passing `opt_in_confirmed`.
+
+### K. Quick replies: "/" search, {name}, public API
+**Branch:** `new-chat-quick-replies` (2026-10-24)
+**Files:** `src/components/inbox/message-composer.tsx`, `src/components/inbox/quick-reply-picker.tsx`,
+`src/components/inbox/message-thread.tsx`, `src/components/settings/quick-replies-manager.tsx`,
+`src/lib/quick-replies/placeholders.ts`, `src/app/api/v1/quick-replies/route.ts`,
+`messages/*.json` (`Inbox.composer`, `Settings.quickReplies`)
+
+Upstream already had quick replies (table `quick_replies`, Settings → Quick replies, and an entry in
+the composer's unlabelled "+" menu). The table was empty and the entry hard to find, so:
+
+- **Composer:** a Quick replies button (⚡) beside the template button, and typing `/` at the start
+  of the message opens a list filtered as you type (↑/↓, Enter or Tab inserts, Esc closes). The
+  picker dialog has a search box. Quick replies are free text, so like typing they're unavailable
+  once the 24-hour window has closed.
+- **Placeholders:** `{name}` and `{first_name}` are filled from the contact when inserted; with no
+  name (or only a phone number) they're dropped and the sentence tidied. Settings shows the hint.
+- **Public API:** `GET /api/v1/quick-replies` (scope `messages:read`, since existing keys can't gain
+  a new scope) lists `{ id, title, kind, content_text, interactive_payload, updated_at }`;
+  `?contact_id=` returns `content_text` filled for that customer.
+
+**Why:** agents retype the same answers; the mobile app should offer the same replies.
+**Tests:** `placeholders.test.ts`, `v1/quick-replies/route.test.ts`.
+**Upstream-merge risk:** *Medium.* The composer is actively changed upstream (see D).
+**Consumer:** the mobile app lists quick replies from the API.
+
+### L. Show / hide password
+**Branch:** `new-chat-quick-replies` (2026-10-24)
+**Files:** `src/components/ui/password-input.tsx`, `src/app/(auth)/login/page.tsx`,
+`signup/page.tsx`, `reset-password/page.tsx`, `src/components/settings/password-form.tsx`,
+`messages/*.json` (`UiPrimitives.showPassword` / `hidePassword`)
+
+- `PasswordInput` wraps `Input` with an eye button that switches the field between hidden and
+  visible text. Every password field (login, sign-up, reset, Settings → change password) uses it.
+
+**Why:** staff asked to check what they typed before signing in.
+**Upstream-merge risk:** *Low.* If upstream edits an auth page, keep its password field a
+`PasswordInput`.
+
 ---
 
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
@@ -264,7 +361,7 @@ These are **not** code changes; they're how this instance is wired. A fresh fork
 - **Env vars** (names only — values in `.env.local` / Vercel, see `.env.local.example`):
   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
   `ENCRYPTION_KEY`, `META_APP_SECRET`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_LOCALE`.
-- **Supabase:** schema is **upstream's migrations, plus our `047_agent_conversation_visibility.sql` and `048_conversation_assignments.sql`** (run by hand in the SQL editor). Deployment-specific config:
+- **Supabase:** schema is **upstream's migrations, plus our `047_agent_conversation_visibility.sql`, `048_conversation_assignments.sql` and `049_contact_whatsapp_opt_in.sql`** (run by hand in the SQL editor). Deployment-specific config:
   Auth → URL Configuration → **Site URL = the production domain** + Redirect URLs (so confirmation
   / reset emails don't fall back to `localhost`).
 - **Hosting:** Vercel, custom domain behind Cloudflare. `NEXT_PUBLIC_*` are inlined at build, so a
@@ -278,6 +375,10 @@ Created through the running app, stored in Supabase (per-account rows), **not** 
   acknowledgment). Interactive list/button payloads must respect WhatsApp limits (section/row
   titles ≤ 24 chars, ≤ 10 list rows, ≤ 3 buttons, button labels ≤ 20/25 chars).
 - **Message templates** — Utility-category templates submitted to Meta for approval.
+- **Quick replies** — 12 starter text replies seeded on 2026-10-24 (Greeting, Ask for details,
+  Studio / App & website / AIoT / EduSMS enquiry, Quote coming, Offer a call back, Offer a live
+  demo, Checking with team, Follow-up, Thank you), several using `{name}`. Edit them in
+  Settings → Quick replies.
 
 A fresh deployment recreates these in the UI (or via a seed script if one is added later).
 
@@ -293,18 +394,22 @@ git merge upstream/main                     # or: git rebase upstream/main
 
 After merging, **re-check the medium/high-risk files** from Section 1 — in likelihood order:
 
-1. `supabase/migrations/` (H, I) — if upstream adds a migration numbered 047 or 048, renumber ours,
+1. `supabase/migrations/` (H, I, J) — if upstream adds a migration numbered 047–049, renumber ours,
    and if it changes the `conversations` policies, re-apply the agent rule on top of theirs.
-2. `src/lib/whatsapp/send-message.ts` and `src/app/api/whatsapp/send/route.ts` (G, H, I) — keep
-   `senderId`, the who-may-send check and claim on reply.
-3. `src/components/inbox/message-composer.tsx` (D) — most actively changed upstream.
+2. `src/lib/whatsapp/send-message.ts` and `src/app/api/whatsapp/send/route.ts` (G, H, I, J) — keep
+   `senderId`, the who-may-send check, claim on reply, and the `phone` path.
+3. `src/components/inbox/message-composer.tsx` (D, K) — most actively changed upstream; keep the
+   mobile layout, the Quick replies button and the "/" list.
 4. `src/components/inbox/message-thread.tsx`, `message-bubble.tsx` (G, H, I) — sender name, handoff
    lines, and the assignee picker going through `/api/conversations/{id}/assign`.
 5. `src/app/(auth)/signup/page.tsx`, `login/page.tsx` (B).
 6. `src/components/settings/*` and `settings/page.tsx` (C).
 7. `src/lib/api/v1/conversations.ts` and the v1 routes (F, G, H, I) — confirm `interactive`,
    `sender_name` and the assignment filter are still returned.
-8. `messages/*.json`, `src/app/layout.tsx` (A, I) — confirm branding and `Inbox.handoff` strings survived.
+8. `messages/*.json`, `src/app/layout.tsx` (A, I, J, K) — confirm branding, `Inbox.handoff`,
+   `Inbox.newChat` and the quick-reply strings survived.
+9. `src/components/inbox/template-picker.tsx`, `conversation-list.tsx` (J) — the header media link
+   and the New chat button.
 
 Then verify:
 
@@ -314,6 +419,7 @@ npm run typecheck && npm run lint && npm run build && npm test
 
 and smoke-test: invite-only signup gate, agent cannot see admin settings tabs, the mobile
 composer (newline on Enter + full-width input), an agent sees only their own and unassigned chats,
-replying to an unassigned chat claims it, our replies show the sender's name, and handing a chat
-over shows a handoff line in the thread. If a customization has since landed upstream,
+replying to an unassigned chat claims it, our replies show the sender's name, handing a chat
+over shows a handoff line in the thread, New chat sends a template to a typed number and records
+the opt-in, and typing "/" in the composer lists quick replies with the name filled in. If a customization has since landed upstream,
 drop ours to reduce drift.

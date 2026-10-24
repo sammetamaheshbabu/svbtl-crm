@@ -13,6 +13,8 @@ import { useRealtime } from "@/hooks/use-realtime";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { MessageThread } from "@/components/inbox/message-thread";
 import { ContactSidebar } from "@/components/inbox/contact-sidebar";
+import { NewChatDialog } from "@/components/inbox/new-chat-dialog";
+import { useCan } from "@/hooks/use-can";
 import { toast } from "sonner";
 import { WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -59,6 +61,8 @@ function InboxPageInner() {
    * once on conversationId-change as usual.
    */
   const [resyncToken, setResyncToken] = useState(0);
+  const canSend = useCan("send-messages");
+  const [newChatOpen, setNewChatOpen] = useState(false);
 
   /**
    * Whether the desktop contact sidebar (tags / deals / notes) is shown.
@@ -488,6 +492,28 @@ function InboxPageInner() {
     [activeConversation?.id, router]
   );
 
+  // New chat sent its first template: put the chat in the list and open it.
+  const handleChatStarted = useCallback(
+    async (convId: string) => {
+      setNewChatOpen(false);
+      const { data } = await createClient()
+        .from("conversations")
+        .select(CONVERSATION_SELECT)
+        .eq("id", convId)
+        .maybeSingle();
+      if (!data) {
+        setResyncToken((n) => n + 1);
+        return;
+      }
+      const conv = normalizeConversation(data);
+      setConversations((prev) =>
+        prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev],
+      );
+      handleSelectConversation(conv);
+    },
+    [handleSelectConversation]
+  );
+
   // Mobile "back" — deselect the conversation so the list pane comes
   // back. Also clears the ?c= param so a refresh lands on the list
   // instead of re-opening the thread the user just backed out of.
@@ -580,7 +606,9 @@ function InboxPageInner() {
             thread can occupy the full width. Always visible on lg+. */}
         <div
           className={cn(
-            "flex h-full flex-1 lg:flex-none",
+            // min-w-0 lets long previews truncate instead of widening the
+            // pane past the screen (which hid the New chat button).
+            "flex h-full min-w-0 flex-1 lg:flex-none",
             hasActiveConv ? "hidden lg:flex" : "flex",
           )}
         >
@@ -590,6 +618,7 @@ function InboxPageInner() {
             conversations={conversations}
             onConversationsLoaded={handleConversationsLoaded}
             resyncToken={resyncToken}
+            onNewChat={canSend ? () => setNewChatOpen(true) : undefined}
           />
         </div>
 
@@ -636,6 +665,12 @@ function InboxPageInner() {
           </div>
         )}
       </div>
+
+      <NewChatDialog
+        open={newChatOpen}
+        onOpenChange={setNewChatOpen}
+        onStarted={handleChatStarted}
+      />
     </div>
   );
 }
