@@ -228,11 +228,11 @@ export async function POST() {
           : null
 
       const row = {
-        // Account tenancy + user audit, same split as the submit
-        // route. account_id is NOT NULL on message_templates
-        // post-017, so an INSERT without it errors.
+        // Account tenancy; the author (user_id) is set on insert only, so a
+        // sync never re-stamps someone else's template as the syncer's.
+        // account_id is NOT NULL on message_templates post-017, so an
+        // INSERT without it errors.
         account_id: accountId,
-        user_id: userId,
         name: t.name,
         category: normalizeCategory(t.category),
         language: t.language,
@@ -284,7 +284,7 @@ export async function POST() {
       } else {
         const { error: insErr } = await db
           .from('message_templates')
-          .insert(row)
+          .insert({ ...row, user_id: userId })
         if (insErr) {
           errors.push({
             name: t.name,

@@ -633,6 +633,9 @@ template picker's media header, and the broadcast wizard's header media.
   within an hour, and does nothing for an unassigned or own chat.
 - Contact import is hidden in the app only: the database can't tell an import from adding contacts
   one by one.
+- **Templates list fix:** Settings → Templates listed only templates the signed-in person created
+  (`user_id` filter); it now lists the account's templates (RLS scopes them). Sync sets `user_id`
+  only on insert, so an agent's sync no longer re-stamps everyone's templates as theirs.
 
 **Side effects:** on Pipelines, an agent sees no customer name on a deal whose customer belongs to
 another agent.

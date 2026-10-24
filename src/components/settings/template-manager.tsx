@@ -203,10 +203,13 @@ export function TemplateManager() {
   async function fetchTemplates(userId: string) {
     try {
       setLoading(true);
+      // SVBTL fork: the account's templates, not just the ones this person
+      // created — RLS (message_templates_select) already limits it to the
+      // account. Filtering by author hid synced templates from everyone else.
+      void userId;
       const { data, error } = await supabase
         .from('message_templates')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       setTemplates(data || []);
