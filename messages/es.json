@@ -226,12 +226,11 @@
       "noCustomerMessages": "Sin mensajes del cliente"
     },
     "composer": {
-      "draftHint": "Toca ✨ para redactar una respuesta con IA; puedes editarla antes de enviarla",
       "sessionExpiredHint": "La sesión de 24 horas expiró. Usa una plantilla para retomar el contacto.",
       "templates": "Plantillas",
       "readOnlyPlaceholder": "Solo lectura: los observadores pueden navegar, pero no responder",
       "sessionExpiredPlaceholder": "Sesión expirada - usa una plantilla",
-      "typeMessagePlaceholder": "Escribe un mensaje, o / para respuestas rápidas (Shift+Enter para nueva línea)",
+      "typeMessagePlaceholder": "Escribe un mensaje, o / para respuestas rápidas",
       "readOnlyTitle": "Solo lectura: tu rol no puede enviar mensajes",
       "recording": "Grabando… {current} / {max}",
       "cancel": "Cancelar",
@@ -272,7 +271,13 @@
       "quickRepliesButton": "Respuestas rápidas (o escribe /)",
       "quickRepliesSearch": "Buscar respuestas rápidas",
       "slashHint": "Respuestas rápidas — ↑↓ para elegir, Enter para insertar, Esc para cerrar",
-      "slashNoMatch": "Ninguna respuesta rápida coincide."
+      "slashNoMatch": "Ninguna respuesta rápida coincide.",
+      "actionsButton": "Más opciones",
+      "actionsSheetTitle": "Añadir al mensaje",
+      "interactiveShort": "Botones / lista",
+      "aiDraftShort": "Borrador IA",
+      "typeMessagePlaceholderShort": "Escribe un mensaje",
+      "enterHint": "Enter para enviar · Shift+Enter para nueva línea"
     },
     "bubble": {
       "photo": "Foto",

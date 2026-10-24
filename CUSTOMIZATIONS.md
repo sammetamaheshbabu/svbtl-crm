@@ -135,12 +135,20 @@ replies.
 the `adminOnly` tagging after a merge.
 
 ### D. Mobile inbox composer
-**Commits:** `78323a1`, `ea62f1a`
-**File:** `src/components/inbox/message-composer.tsx`
+**Commits:** `78323a1`, `ea62f1a`; reworked on branch `mobile-composer` (2026-10-24)
+**Files:** `src/components/inbox/message-composer.tsx`, `quick-reply-picker.tsx`,
+`message-bubble.tsx`, `message-media.tsx`, `messages/*.json` (`Inbox.composer`)
 
-- Responsive layout: on mobile the four action buttons (attach / more / template / AI) wrap to
-  their own row **below** the textarea (`flex-wrap` + `basis-full` + `order`), giving the input
-  full width; `sm+` keeps the original single inline row.
+- One row: ⊕, message box, Send. When the composer itself is narrower than 36rem (a phone, or a
+  desktop thread between the list and the contact panel — a `@container` query, not the screen
+  width), every action (photo, video, document, voice note, quick replies, templates,
+  buttons/list, AI draft) lives in one sheet opened by ⊕: from the bottom on phones, a centred
+  card on wider screens. Wider composers keep the inline buttons.
+- The message box: 16px text on phones (no iOS zoom), hidden scrollbar, a short placeholder;
+  the Enter / Shift+Enter hint is a tooltip on mouse devices. The "Tap ✨ to draft a reply" line
+  under the box is gone.
+- Bubbles are capped to their row and a document's file name truncates, so a long name no
+  longer scrolls the thread sideways.
 - Enter-to-send is gated to **fine-pointer** devices via `matchMedia('(pointer: fine)')`. On
   touch devices Enter inserts a **newline** and the Send button is the only way to send.
 

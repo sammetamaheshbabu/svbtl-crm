@@ -226,12 +226,11 @@
       "noCustomerMessages": "No customer messages"
     },
     "composer": {
-      "draftHint": "Tap the ✨ to draft a reply with AI — you can edit it before sending",
       "sessionExpiredHint": "24-hour session expired. Use a template to re-engage.",
       "templates": "Templates",
       "readOnlyPlaceholder": "Read-only — viewers can browse but not reply",
       "sessionExpiredPlaceholder": "Session expired - use a template",
-      "typeMessagePlaceholder": "Type a message, or / for quick replies (Shift+Enter for new line)",
+      "typeMessagePlaceholder": "Type a message, or / for quick replies",
       "readOnlyTitle": "Read-only — your role can't send messages",
       "recording": "Recording… {current} / {max}",
       "cancel": "Cancel",
@@ -272,7 +271,13 @@
       "quickRepliesButton": "Quick replies (or type /)",
       "quickRepliesSearch": "Search quick replies",
       "slashHint": "Quick replies — ↑↓ to choose, Enter to insert, Esc to close",
-      "slashNoMatch": "No quick reply matches."
+      "slashNoMatch": "No quick reply matches.",
+      "actionsButton": "More options",
+      "actionsSheetTitle": "Add to message",
+      "interactiveShort": "Buttons / list",
+      "aiDraftShort": "AI draft",
+      "typeMessagePlaceholderShort": "Type a message",
+      "enterHint": "Enter to send · Shift+Enter for a new line"
     },
     "bubble": {
       "photo": "Photo",
