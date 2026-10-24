@@ -650,7 +650,7 @@ it adds write routes or editor pages for these areas, gate them the same way.
 safe: before it, agents' buttons are already hidden; after it, the database refuses agent writes).
 
 ### R. Automation priority and "Contact has any tag"
-**Branch:** `automation-priority` (2026-10-24)
+**Branch:** `automation-priority` (merged 2026-10-24, `4d32b0c`)
 **Files:** `src/lib/automations/engine.ts` (`pickByKeywordPriority`, `any_tag` in
 `evaluateCondition`), `src/types/index.ts` (`KeywordMatchTriggerConfig.priority`,
 `KeywordPriority`, `ConditionSubject` `any_tag`), `src/lib/automations/validate.ts`,
@@ -763,12 +763,58 @@ Webhook: `conversation.assigned` (I).
 Created through the app, stored per account in Supabase, **not** version-controlled. A fresh
 deployment recreates these in the UI.
 
-- **Automations** — a keyword-driven menu tree (greeting → category → product/service → tag +
-  acknowledgement) and "Tag added" → "Assign conversation" rules that route chats to departments.
-  Interactive payloads must respect WhatsApp limits (row titles ≤ 24, ≤ 10 list rows, ≤ 3 buttons,
-  button labels ≤ 20).
-- **Tags** — 15 department / stage tags (New / Follow-up / Done × Studio, AIoT, SVBTL, EduSMS, plus
-  Our Team, Arrange a Call Back, Arrange a Live Demo).
+- **Automations** — keyword-driven replies. Interactive payloads must respect WhatsApp limits (row
+  titles ≤ 24, ≤ 10 list rows, ≤ 3 buttons, button labels ≤ 20). Keyword priority and the "Contact
+  has any tag" condition are explained in section R. Studio routing was rebuilt on 2026-10-24:
+  - **Greeting — "Categorise 1"** (Lowest): replies to hi / hii / hey / hello / namaste, whole words.
+    A contact with **any tag** gets "Welcome back! … Our team will reply to you shortly." A contact
+    with no tags gets the EduSMS / Studio / Other menu. It stays quiet when any other keyword
+    automation matches the same message.
+  - **Menu follow-ups** (Normal, unchanged): EduSMS Interest, Categorise 2 ("Other" → AioT / App
+    Development / More Options), AioT Interest, App Development Interest, More Options, More Details,
+    Arrange a Call Back, Arrange a Live Demo.
+  - **14 studio service replies, "Studio · <service>"** (Normal, whole-word keywords plus synonyms,
+    e.g. wedding / marriage / pelli / bride). There is one for each page under
+    `https://studio.svbtechlabs.com/services/`: wedding, pre-wedding, Hindu wedding, Christian
+    wedding, baby shower, maternity & newborn, birthday, anniversary, corporate event, real estate,
+    food, fashion, product, portrait. Each one:
+    - adds the tag **Studio Customer**;
+    - replies with the service page link, the main website link and "Our team will contact you
+      shortly", plus the buttons Arrange a Call Back / Arrange a Live Demo.
+
+    Exceptions:
+    - A contact tagged **Studio Owner**, or a message that mentions "website", gets the owner reply
+      instead.
+    - "Studio · Wedding Photography" stays silent when the message names a more specific service
+      (pre-wedding, Hindu, Christian, traditional / Telugu / South Indian, anniversary), so only that
+      service replies.
+  - **"Studio · Photography enquiry"** (Low): matches studio / photography / photographer /
+    photoshoot / shoot / photos / camera, including a tap on the menu's **Studio** button. It routes
+    by tag:
+    - Studio Owner → owner reply;
+    - Studio Customer → services list;
+    - no studio tag → asks "Book a photoshoot" / "Website for studio".
+  - **"Studio · Book a photoshoot"** (Normal; this was "Studio End Customer Leads", same id): adds
+    Studio Customer and sends a list of 10 services. The list text asks customers to type any service
+    that isn't listed (food, fashion, Hindu / Christian wedding).
+  - **"Studio web Key words"** — the owner reply (Normal, contains): matches studio website, SVB
+    Studio, photography / photographer website, website for (my) studio, studio site, I'm / I am a
+    photographer.
+    - Adds the tags Follow-up Studio and **Studio Owner**.
+    - Sends the website link and "Our team will contact you shortly", with the buttons Call Back /
+      Live Demo / More Details.
+  - **Tooling:** the setup was generated and checked with scripts kept outside the repo: a plan file,
+    a simulator that replays sample messages and every button / row tap under four tag states, and
+    an apply script that backs up all automations first. The last backup before the rebuild is
+    `automations-backup-2026-10-24T17-52-13-175Z.json`. To rebuild by hand, follow the list above.
+  - **Not covered yet:** "Tag added" → "Assign conversation" routing for studio leads, and a Pocket
+    CRM reply (it currently gets the greeting menu).
+- **Tags** — 17:
+  - 15 department / stage tags (New / Follow-up / Done × Studio, AIoT, SVBTL, EduSMS, plus Our Team,
+    Arrange a Call Back, Arrange a Live Demo);
+  - **Studio Customer** (books photoshoots) and **Studio Owner** (wants a website for their studio),
+    both added 2026-10-24 and set by the studio automations above. Contacts tagged earlier only with
+    Follow-up Studio aren't back-filled; they get the two-button question once.
 - **Message templates** — Utility templates approved by Meta (`inquiry_received`,
   `callback_scheduled`, `demo_confirmation`, `booking_confirmation`, `appointment_reminder`), Meta's
   sample `hello_world`, and `studio_website_intro_v1` (en) / `studio_website_intro_v1_te` (te)
@@ -869,4 +915,4 @@ If a customization has since landed upstream, drop ours to reduce drift.
 | 2026-10-24 | `c4848ac` | Upstream sync to `34bce1a`; fork migrations → 900–902; dashboard scope 903 (M) |
 | 2026-10-24 | `388ce75`, `883d797`, `c33abbf` (`1c01455`) | Edit contact in chat, quick reply image + fill-ins, Media Library (N, O, P) |
 | 2026-10-24 | `c4eb34d`, `3c9398e` (`a3926b2`) | Agent restrictions, New chat lookup, handover requests (Q) |
-| 2026-10-24 | `automation-priority` | Keyword priority, "Contact has any tag" condition (R) |
+| 2026-10-24 | `01dcc93` (`4d32b0c`) | Keyword priority, "Contact has any tag" condition (R); studio automations rebuilt (section 5) |
