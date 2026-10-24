@@ -182,7 +182,8 @@
       "clearAll": "Clear all",
       "noConversations": "No conversations found",
       "noMessagesYet": "No messages yet",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "newChat": "New chat"
     },
     "messageThread": {
       "backToConversations": "Back to conversations",
@@ -230,7 +231,7 @@
       "templates": "Templates",
       "readOnlyPlaceholder": "Read-only — viewers can browse but not reply",
       "sessionExpiredPlaceholder": "Session expired - use a template",
-      "typeMessagePlaceholder": "Type a message... (Shift+Enter for new line)",
+      "typeMessagePlaceholder": "Type a message, or / for quick replies (Shift+Enter for new line)",
       "readOnlyTitle": "Read-only — your role can't send messages",
       "recording": "Recording… {current} / {max}",
       "cancel": "Cancel",
@@ -267,7 +268,11 @@
         "document": "document",
         "audio": "audio"
       },
-      "uploadFailed": "Upload failed."
+      "uploadFailed": "Upload failed.",
+      "quickRepliesButton": "Quick replies (or type /)",
+      "quickRepliesSearch": "Search quick replies",
+      "slashHint": "Quick replies — ↑↓ to choose, Enter to insert, Esc to close",
+      "slashNoMatch": "No quick reply matches."
     },
     "bubble": {
       "photo": "Photo",
@@ -339,7 +344,10 @@
       "send": "Send template",
       "headerVarLabel": "Header {var}",
       "bodyVarLabel": "Body {var}",
-      "urlButtonVarLabel": "URL button \"{text}\" — value for {var}"
+      "urlButtonVarLabel": "URL button \"{text}\" — value for {var}",
+      "headerMediaLabel": "Header {type} link",
+      "headerMediaHint": "A public link to the file shown at the top of the message.",
+      "headerMediaInvalid": "Enter a link that starts with https://"
     },
     "sidebar": {
       "contactInfo": "Contact info",
@@ -359,6 +367,25 @@
       "resumed": "AI resumed.",
       "updateError": "Couldn’t update the AI assistant.",
       "networkError": "Couldn’t reach the server."
+    },
+    "newChat": {
+      "title": "New chat",
+      "description": "Message a customer who hasn't written to us yet. WhatsApp allows only an approved template as the first message.",
+      "numberLabel": "Mobile number",
+      "countryLabel": "Country code",
+      "otherCountry": "Other",
+      "numberHint": "Pick the country code and type the number.",
+      "numberInvalid": "This doesn't look like a valid mobile number.",
+      "existingContact": "Already a contact: {name}. The template goes into their chat.",
+      "nameLabel": "Customer name (optional)",
+      "namePlaceholder": "e.g. Ravi Kumar",
+      "optInLabel": "This customer agreed to receive WhatsApp messages from SVB Tech Labs.",
+      "alreadyOptedIn": "Opt-in recorded on {date}.",
+      "templateOnlyNote": "You can type freely once the customer replies.",
+      "chooseTemplate": "Choose template",
+      "cancel": "Cancel",
+      "sent": "Template sent",
+      "failed": "Couldn't send: {reason}"
     }
   },
   "Contacts": {
@@ -2032,7 +2059,8 @@
       "kindInteractive": "Interactive",
       "textPlaceholder": "The message text to insert",
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "placeholdersHint": "Write {name} or {firstName} and the customer's name is filled in when the reply is inserted."
     }
   },
   "SignupPage": {
@@ -2200,7 +2228,9 @@
     "loading": "Loading..."
   },
   "UiPrimitives": {
-    "close": "Close"
+    "close": "Close",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "GatedButton": {
     "readOnly": "Read-only — your role can't {action}",
@@ -2697,9 +2727,11 @@
       "dbUpsertFailed": "Reaction sent to Meta but DB upsert failed"
     },
     "send": {
-      "idsRequired": "Either conversation_id or contact_id, plus message_type, are required",
+      "idsRequired": "Either conversation_id, contact_id or phone, plus message_type, are required",
       "contactNotFound": "Contact not found",
-      "openConversationFailed": "Failed to open a conversation for this contact"
+      "openConversationFailed": "Failed to open a conversation for this contact",
+      "newChatTemplateOnly": "A new chat must start with an approved template",
+      "assignedElsewhere": "This chat is assigned to someone else"
     },
     "templates": {
       "invalidId": "Invalid template id.",

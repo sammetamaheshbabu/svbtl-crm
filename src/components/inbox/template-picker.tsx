@@ -28,6 +28,8 @@ export interface TemplateSendValues {
   body: string[];
   headerText?: string;
   buttonParams?: Record<number, string>;
+  /** Link to the header file, for an image / video / document header. */
+  headerMediaUrl?: string;
 }
 
 interface TemplatePickerProps {
@@ -42,6 +44,24 @@ function renderBodyPreview(body: string, params: string[]): string {
     const value = params[idx];
     return value && value.trim().length > 0 ? value : `{{${raw}}}`;
   });
+}
+
+type MediaHeader = "image" | "video" | "document";
+
+function mediaHeaderOf(template: MessageTemplate): MediaHeader | null {
+  const type = template.header_type;
+  return type === "image" || type === "video" || type === "document"
+    ? type
+    : null;
+}
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
 }
 
 interface UrlButtonSlot {
@@ -87,6 +107,7 @@ export function TemplatePicker({
   const [params, setParams] = useState<string[]>([]);
   const [headerText, setHeaderText] = useState<string>("");
   const [buttonParams, setButtonParams] = useState<Record<number, string>>({});
+  const [headerMediaUrl, setHeaderMediaUrl] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
@@ -137,6 +158,7 @@ export function TemplatePicker({
     setParams([]);
     setHeaderText("");
     setButtonParams({});
+    setHeaderMediaUrl("");
   }
 
   function handleOpenChange(next: boolean) {
@@ -146,10 +168,13 @@ export function TemplatePicker({
 
   function pickTemplate(template: MessageTemplate) {
     const slots = collectVariableSlots(template);
+    // A media header can reuse the file stored with the template; one
+    // synced from Meta has none, so the sender gives a link.
     const noInputsNeeded =
       slots.bodyVars.length === 0 &&
       slots.headerVarCount === 0 &&
-      slots.urlButtonSlots.length === 0;
+      slots.urlButtonSlots.length === 0 &&
+      (!mediaHeaderOf(template) || !!template.header_media_url);
     if (noInputsNeeded) {
       onSelect(template, { body: [] });
       handleOpenChange(false);
@@ -159,6 +184,7 @@ export function TemplatePicker({
     setParams(new Array(slots.bodyVars.length).fill(""));
     setHeaderText("");
     setButtonParams({});
+    setHeaderMediaUrl(template.header_media_url ?? "");
   }
 
   function confirm() {
@@ -170,6 +196,9 @@ export function TemplatePicker({
         Object.entries(buttonParams).map(([k, v]) => [Number(k), v.trim()]),
       );
     }
+    if (mediaHeader && headerMediaUrl.trim()) {
+      values.headerMediaUrl = headerMediaUrl.trim();
+    }
     onSelect(selected, values);
     handleOpenChange(false);
   }
@@ -178,8 +207,10 @@ export function TemplatePicker({
     () => (selected ? collectVariableSlots(selected) : null),
     [selected],
   );
+  const mediaHeader = selected ? mediaHeaderOf(selected) : null;
   const canConfirm =
     !!selected &&
+    (!mediaHeader || isHttpUrl(headerMediaUrl.trim())) &&
     !!slots &&
     slots.bodyVars.every((_, i) => (params[i] ?? "").trim().length > 0) &&
     (slots.headerVarCount === 0 || headerText.trim().length > 0) &&
@@ -261,6 +292,25 @@ export function TemplatePicker({
                 </p>
               )}
             </div>
+            {mediaHeader && (
+              <div className="space-y-1">
+                <Label className="text-xs text-popover-foreground">
+                  {t("headerMediaLabel", { type: mediaHeader })}
+                </Label>
+                <Input
+                  type="url"
+                  value={headerMediaUrl}
+                  onChange={(e) => setHeaderMediaUrl(e.target.value)}
+                  placeholder="https://"
+                  className="border-border bg-muted text-foreground placeholder:text-muted-foreground"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  {headerMediaUrl.trim() && !isHttpUrl(headerMediaUrl.trim())
+                    ? t("headerMediaInvalid")
+                    : t("headerMediaHint")}
+                </p>
+              </div>
+            )}
             {slots && slots.headerVarCount > 0 && (
               <div className="space-y-1">
                 <Label className="text-xs text-popover-foreground">

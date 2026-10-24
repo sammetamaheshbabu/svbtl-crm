@@ -12,13 +12,17 @@ import {
   SendMessageError,
 } from '@/lib/whatsapp/send-message'
 import { getT } from '@/lib/i18n/translate'
+import { isUniqueViolation } from '@/lib/contacts/dedupe'
+import { supabaseAdmin } from '@/lib/flows/admin-client'
+import { resolveStartChat, recordOptIn } from '@/lib/whatsapp/start-chat'
 
 const t = getT('Api')
 
 // The dashboard's outbound-send endpoint. It owns auth, per-user rate
-// limiting, and the two ways the UI targets a thread — an existing
-// `conversation_id` (inbox) or a `contact_id` (Contact detail →
-// find-or-create the conversation). The actual Meta plumbing (validate
+// limiting, and the three ways the UI targets a thread — an existing
+// `conversation_id` (inbox), a `contact_id` (Contact detail →
+// find-or-create the conversation), or a typed `phone` (inbox → New
+// chat, template only). The actual Meta plumbing (validate
 // → send → persist → pause flows) lives in the shared
 // `sendMessageToConversation` core, which the public `/api/v1/messages`
 // endpoint reuses. This route is a thin adapter: resolve the
@@ -51,6 +55,12 @@ export async function POST(request: Request) {
       // yet (Contact detail → Send template) — we find-or-create one below.
       conversation_id: conversationIdInput,
       contact_id,
+      // `phone` starts a chat with someone who may not be a contact yet
+      // (inbox → New chat). `name` names a new contact; `opt_in_confirmed`
+      // is the sender confirming the customer agreed to hear from us.
+      phone,
+      name,
+      opt_in_confirmed,
       message_type,
       content_text,
       media_url,
@@ -63,7 +73,7 @@ export async function POST(request: Request) {
       reply_to_message_id,
     } = body
 
-    if ((!conversationIdInput && !contact_id) || !message_type) {
+    if ((!conversationIdInput && !contact_id && !phone) || !message_type) {
       return NextResponse.json(
         {
           error:
@@ -91,11 +101,22 @@ export async function POST(request: Request) {
       throw err
     }
 
+    // Meta only lets a business message someone first with an approved
+    // template; free text waits until the customer replies.
+    if (phone && !conversationIdInput && !contact_id && message_type !== 'template') {
+      return NextResponse.json(
+        { error: t('send.newChatTemplateOnly') },
+        { status: 400 }
+      )
+    }
+
     // Resolve the target conversation. With `conversation_id` we load the
     // existing thread; with `contact_id` we find-or-create one for the
     // contact so a business-initiated template send (Contact detail view)
     // reuses the shared send core below.
     let conversationId: string | null = null
+    // On the `phone` path, the contact whose opt-in this send records.
+    let optInContactId: string | null = null
 
     if (conversationIdInput) {
       const { data, error: convError } = await supabase
@@ -112,7 +133,7 @@ export async function POST(request: Request) {
         )
       }
       conversationId = data.id
-    } else {
+    } else if (contact_id) {
       // contact_id path: verify the contact is in this account first so a
       // caller can't open a conversation against someone else's contact.
       const { data: contactRow, error: contactErr } = await supabase
@@ -135,6 +156,14 @@ export async function POST(request: Request) {
         userId,
         contact_id
       )
+      if (resolved === 'hidden') {
+        // The contact's chat exists but RLS hides it: an agent's view
+        // stops at their own and unassigned chats (migration 047).
+        return NextResponse.json(
+          { error: t('send.assignedElsewhere') },
+          { status: 403 }
+        )
+      }
       if (!resolved) {
         return NextResponse.json(
           { error: t('send.openConversationFailed') },
@@ -142,6 +171,26 @@ export async function POST(request: Request) {
         )
       }
       conversationId = resolved
+    } else {
+      // phone path: find-or-create the contact and chat on the service
+      // role, so a chat this agent can't see is refused rather than
+      // duplicated.
+      try {
+        const target = await resolveStartChat(supabaseAdmin(), accountId, {
+          phone: String(phone),
+          name: typeof name === 'string' ? name : null,
+          optInConfirmed: opt_in_confirmed === true,
+          senderId: userId,
+          senderRole: role,
+        })
+        conversationId = target.conversationId
+        if (target.recordOptIn) optInContactId = target.contactId
+      } catch (err) {
+        if (err instanceof SendMessageError) {
+          return NextResponse.json({ error: err.message }, { status: err.status })
+        }
+        throw err
+      }
     }
 
     if (!conversationId) {
@@ -174,11 +223,17 @@ export async function POST(request: Request) {
         senderRole: role,
       })
 
+      if (optInContactId) {
+        await recordOptIn(supabaseAdmin(), accountId, optInContactId, userId)
+      }
+
       return NextResponse.json({
         success: true,
         message_id: result.messageId,
         whatsapp_message_id: result.whatsappMessageId,
         claimed: result.claimed,
+        // New chat opens the thread it just started.
+        conversation_id: conversationId,
       })
     } catch (err) {
       if (err instanceof SendMessageError) {
@@ -205,13 +260,15 @@ type SendSupabase = Awaited<ReturnType<typeof createClient>>
  * inbound-then-outbound (or outbound-first) sequence converges on a single
  * thread per contact. Runs under the caller's RLS — the conversations_insert
  * policy requires account agent membership, which the caller already is.
+ * Returns 'hidden' when the insert collides with a chat the caller's RLS
+ * hides (an agent and someone else's chat).
  */
 async function findOrCreateConversation(
   supabase: SendSupabase,
   accountId: string,
   userId: string,
   contactId: string,
-): Promise<string | null> {
+): Promise<string | 'hidden' | null> {
   const { data: existing } = await supabase
     .from('conversations')
     .select('id')
@@ -232,6 +289,7 @@ async function findOrCreateConversation(
     .single()
 
   if (error) {
+    if (isUniqueViolation(error)) return 'hidden'
     console.error('Error creating conversation for contact send:', error.message)
     return null
   }
