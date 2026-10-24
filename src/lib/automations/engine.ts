@@ -5,6 +5,7 @@ import type {
   AutomationTriggerType,
   ConditionStepConfig,
   KeywordMatchTriggerConfig,
+  KeywordPriority,
   InteractiveReplyTriggerConfig,
   TagTriggerConfig,
   SendMessageStepConfig,
@@ -136,8 +137,8 @@ export async function runAutomationsForTrigger(input: DispatchInput): Promise<vo
     }
     if (!automations || automations.length === 0) return
 
-    for (const automation of automations as Automation[]) {
-      if (!triggerMatches(automation, input.context)) continue
+    const matched = (automations as Automation[]).filter((a) => triggerMatches(a, input.context))
+    for (const automation of pickByKeywordPriority(matched)) {
       try {
         await executeAutomation(automation, input)
       } catch (err) {
@@ -1123,6 +1124,27 @@ export function triggerMatches(automation: Automation, ctx: AutomationContext | 
   return true
 }
 
+const KEYWORD_TIERS: KeywordPriority[] = ['normal', 'low', 'lowest']
+
+function keywordTier(automation: Automation): number {
+  if (automation.trigger_type !== 'keyword_match') return 0
+  const p = (automation.trigger_config as KeywordMatchTriggerConfig)?.priority
+  const i = KEYWORD_TIERS.indexOf(p ?? 'normal')
+  return i < 0 ? 0 : i
+}
+
+/**
+ * SVBTL fork. Of the automations whose trigger matched, keep the keyword
+ * ones in the best priority tier present (see KeywordMatchTriggerConfig
+ * .priority). Other trigger types never compete and always run.
+ */
+export function pickByKeywordPriority(matched: Automation[]): Automation[] {
+  const keyword = matched.filter((a) => a.trigger_type === 'keyword_match')
+  if (keyword.length === 0) return matched
+  const best = Math.min(...keyword.map(keywordTier))
+  return matched.filter((a) => a.trigger_type !== 'keyword_match' || keywordTier(a) === best)
+}
+
 async function evaluateCondition(cfg: ConditionStepConfig, args: ExecuteArgs): Promise<boolean> {
   const db = supabaseAdmin()
   switch (cfg.subject) {
@@ -1136,6 +1158,15 @@ async function evaluateCondition(cfg: ConditionStepConfig, args: ExecuteArgs): P
         .select('id', { count: 'exact', head: true })
         .eq('contact_id', args.contactId)
         .eq('tag_id', cfg.operand)
+      return (count ?? 0) > 0
+    }
+    case 'any_tag': {
+      if (!args.contactId) return false
+      // Same tenancy note as tag_presence above.
+      const { count } = await db
+        .from('contact_tags')
+        .select('id', { count: 'exact', head: true })
+        .eq('contact_id', args.contactId)
       return (count ?? 0) > 0
     }
     case 'contact_field': {

@@ -1380,7 +1380,8 @@
           "tag_presence": "Tag presence",
           "contact_field": "Contact field",
           "message_content": "Message content",
-          "time_of_day": "Time of day"
+          "time_of_day": "Time of day",
+          "any_tag": "Contact has any tag"
         },
         "operandLabel": "Operand",
         "placeholderTime": "HH:mm-HH:mm",
@@ -1399,7 +1400,12 @@
         "matchExact": "Exact",
         "waitForReply": "Wait for reply before continuing",
         "waitForReplyHint": "Pauses here until the customer taps a button or replies (up to 24h). The steps after this one, including If/Else on message content, then use their reply.",
-        "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed."
+        "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed.",
+        "priority": "Priority",
+        "priorityNormal": "Normal",
+        "priorityLow": "Low — only if no Normal one matches",
+        "priorityLowest": "Lowest — only if nothing else matches",
+        "priorityHint": "When one message matches several keyword automations, only the highest priority ones run. Use Lowest for a catch-all greeting."
       },
       "preview": {
         "noText": "no text yet",

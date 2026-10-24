@@ -28,7 +28,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 
 - [At a glance](#at-a-glance)
 - [Who can do what](#who-can-do-what)
-- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–P
+- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–R
 - [2. Database migrations](#2-database-migrations)
 - [3. Public API changes (for the mobile app)](#3-public-api-changes-for-the-mobile-app)
 - [4. Deployment configuration](#4-deployment-configuration-not-in-git--recreate-per-deployment)
@@ -595,7 +595,7 @@ template picker's media header, and the broadcast wizard's header media.
 **Upstream-merge risk:** *Low–Medium.* Keep `path` optional and the delete guarded by it.
 
 ### Q. Agent restrictions, New chat lookup and handover requests
-**Branch:** `agent-restrictions` (2026-10-24, not yet merged)
+**Branch:** `agent-restrictions` (merged 2026-10-24, `a3926b2`)
 **Migration:** `supabase/migrations/904_agent_restrictions.sql`
 
 **What agents see**
@@ -648,6 +648,33 @@ contact scope, notification type, admin-only write routes, agent sync), `number-
 it adds write routes or editor pages for these areas, gate them the same way.
 **Applying the migration:** run 904 in the SQL editor when the code is deployed (either order is
 safe: before it, agents' buttons are already hidden; after it, the database refuses agent writes).
+
+### R. Automation priority and "Contact has any tag"
+**Branch:** `automation-priority` (2026-10-24)
+**Files:** `src/lib/automations/engine.ts` (`pickByKeywordPriority`, `any_tag` in
+`evaluateCondition`), `src/types/index.ts` (`KeywordMatchTriggerConfig.priority`,
+`KeywordPriority`, `ConditionSubject` `any_tag`), `src/lib/automations/validate.ts`,
+`src/components/automations/automation-builder.tsx` (Priority dropdown under Match type; "Contact
+has any tag" condition with no operand), `messages/*.json` (`Automations.builder.config.priority*`,
+`subjects.any_tag`).
+
+- **Keyword priority** — Normal (default) / Low / Lowest. Upstream runs *every* keyword automation
+  that matches a message, so "Hello, I want wedding photography" got both the greeting menu and the
+  wedding reply. Now, of the keyword automations that match one message, only those in the best tier
+  run: a Normal match silences Low and Lowest; a Low match silences Lowest. Several Normal matches
+  still all run, as before. Other trigger types are never filtered. Rows without `priority` are
+  Normal, so existing automations behave as before.
+  - Use: the greeting menu is **Lowest**; broad "studio / photography enquiry" questions are
+    **Low**; replies to a named service are **Normal**.
+- **"Contact has any tag" condition** — true when the contact carries at least one tag. The
+  greeting uses it so a known customer (any department / stage tag) is not shown the
+  "EduSMS / Studio / Other" menu again.
+
+**Why:** customers who already said what they want, or are already tagged, were sent the generic
+service menu again.
+**Tests:** `engine.test.ts` (`pickByKeywordPriority`), `validate.test.ts` (`any_tag` needs no operand).
+**Upstream-merge risk:** *Low–Medium.* The dispatch loop in `runAutomationsForTrigger` and
+`evaluateCondition` are upstream code; if they change, re-apply the filter and the `any_tag` case.
 
 ---
 
@@ -841,3 +868,5 @@ If a customization has since landed upstream, drop ours to reduce drift.
 | 2026-10-24 | `cc29ff3` (`9ff2f27`) | Mobile composer rework: one row + ⊕ sheet, no sideways scroll (D) |
 | 2026-10-24 | `c4848ac` | Upstream sync to `34bce1a`; fork migrations → 900–902; dashboard scope 903 (M) |
 | 2026-10-24 | `388ce75`, `883d797`, `c33abbf` (`1c01455`) | Edit contact in chat, quick reply image + fill-ins, Media Library (N, O, P) |
+| 2026-10-24 | `c4eb34d`, `3c9398e` (`a3926b2`) | Agent restrictions, New chat lookup, handover requests (Q) |
+| 2026-10-24 | `automation-priority` | Keyword priority, "Contact has any tag" condition (R) |

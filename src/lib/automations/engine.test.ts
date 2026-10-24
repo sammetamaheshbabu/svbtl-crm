@@ -176,6 +176,7 @@ import {
   requeueStalledExecutions,
   resumeAwaitingReply,
   resumePendingExecution,
+  pickByKeywordPriority,
   runAutomationsForTrigger,
   triggerMatches,
 } from "./engine";
@@ -565,6 +566,37 @@ describe("tag_added — conversation policy", () => {
       status: "failed",
       error_message: "tag_added automation cannot send: contact has no existing conversation",
     }));
+  });
+});
+
+describe("pickByKeywordPriority", () => {
+  const kw = (id: string, priority?: "normal" | "low" | "lowest") =>
+    ({
+      id,
+      trigger_type: "keyword_match",
+      trigger_config: { keywords: ["x"], match_type: "contains", priority },
+    }) as unknown as Automation;
+  const ids = (list: Automation[]) => pickByKeywordPriority(list).map((a) => a.id);
+
+  it("runs every match when all are normal (the old behaviour)", () => {
+    expect(ids([kw("a"), kw("b", "normal")])).toEqual(["a", "b"]);
+  });
+
+  it("lets a specific reply silence the catch-all greeting", () => {
+    expect(ids([kw("greeting", "lowest"), kw("wedding")])).toEqual(["wedding"]);
+    expect(ids([kw("greeting", "lowest"), kw("enquiry", "low")])).toEqual(["enquiry"]);
+    expect(ids([kw("greeting", "lowest"), kw("enquiry", "low"), kw("wedding")])).toEqual([
+      "wedding",
+    ]);
+  });
+
+  it("runs the greeting when nothing else matched", () => {
+    expect(ids([kw("greeting", "lowest")])).toEqual(["greeting"]);
+  });
+
+  it("never filters other trigger types", () => {
+    const other = { id: "tag", trigger_type: "tag_added", trigger_config: {} } as unknown as Automation;
+    expect(ids([other, kw("greeting", "lowest"), kw("wedding")])).toEqual(["tag", "wedding"]);
   });
 });
 

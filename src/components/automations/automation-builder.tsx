@@ -52,6 +52,7 @@ import type {
   CustomField,
   InteractiveMessagePayload,
   KeywordMatchTriggerConfig,
+  KeywordPriority,
   MessageTemplate,
   Tag as TagRecord,
 } from "@/types"
@@ -1002,6 +1003,28 @@ function KeywordMatchConfig({
           </p>
         )}
       </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+          {t("config.priority")}
+        </label>
+        <select
+          value={config?.priority ?? "normal"}
+          onChange={(e) =>
+            onChange({
+              ...config,
+              priority: e.target.value as KeywordPriority,
+            })
+          }
+          className="w-full rounded-md border border-border bg-muted px-2 py-1.5 text-sm text-foreground focus:outline-none"
+        >
+          <option value="normal">{t("config.priorityNormal")}</option>
+          <option value="low">{t("config.priorityLow")}</option>
+          <option value="lowest">{t("config.priorityLowest")}</option>
+        </select>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t("config.priorityHint")}
+        </p>
+      </div>
     </div>
   )
 }
@@ -1337,9 +1360,10 @@ function ConditionEditor({
           <option value="contact_field">{t("config.subjects.contact_field")}</option>
           <option value="message_content">{t("config.subjects.message_content")}</option>
           <option value="time_of_day">{t("config.subjects.time_of_day")}</option>
+          <option value="any_tag">{t("config.subjects.any_tag")}</option>
         </select>
       </FieldBlock>
-      {subject !== "message_content" && (
+      {subject !== "message_content" && subject !== "any_tag" && (
         <FieldBlock label={t("config.operandLabel")}>
           <Input
             placeholder={
