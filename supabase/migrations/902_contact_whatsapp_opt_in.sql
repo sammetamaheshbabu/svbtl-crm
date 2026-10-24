@@ -1,5 +1,5 @@
 -- ============================================================
--- 049 — Record a contact's WhatsApp opt-in
+-- 902 (SVBTL fork; was 049) — Record a contact's WhatsApp opt-in
 --
 -- Meta requires a customer's permission before a business messages
 -- them first. When a team member starts a chat by typing a number

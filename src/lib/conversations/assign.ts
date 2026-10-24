@@ -2,7 +2,7 @@
 // Assigning a chat to a team member (or unassigning it).
 //
 // Every write goes through the `assign_conversation` database function
-// (migration 048), which records the handoff in
+// (migration 901), which records the handoff in
 // `conversation_assignments` with who made it. When the assignee
 // changes, a `conversation.assigned` webhook is sent so integrations —
 // the SVB mobile app among them — can tell the new owner.

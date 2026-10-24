@@ -158,7 +158,7 @@ export async function POST(request: Request) {
       )
       if (resolved === 'hidden') {
         // The contact's chat exists but RLS hides it: an agent's view
-        // stops at their own and unassigned chats (migration 047).
+        // stops at their own and unassigned chats (migration 900).
         return NextResponse.json(
           { error: t('send.assignedElsewhere') },
           { status: 403 }

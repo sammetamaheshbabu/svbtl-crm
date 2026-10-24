@@ -1,5 +1,5 @@
 -- ============================================================
--- 047 — Agents see their own chats and unassigned ones
+-- 900 (SVBTL fork; was 047) — Agents see their own chats and unassigned ones
 --
 -- Owners and admins keep seeing every conversation in the account.
 -- Agents and viewers see a conversation only while it is unassigned

@@ -17,7 +17,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * picker. Body: { agent_id: string | null }.
  *
  * Any agent may hand over a chat they can see; the handoff is recorded
- * with who made it (migration 048) and announced to integrations as
+ * with who made it (migration 901) and announced to integrations as
  * `conversation.assigned`, so the new owner is alerted on their phone.
  * Runs on the RLS-scoped client: a chat the caller cannot see is a 404.
  */

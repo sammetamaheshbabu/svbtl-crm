@@ -1,6 +1,7 @@
 import {
   Coins,
   FileText,
+  Inbox,
   KeyRound,
   LayoutGrid,
   Palette,
@@ -29,6 +30,7 @@ export const SETTINGS_SECTIONS = [
   'whatsapp',
   'templates',
   'quick-replies',
+  'inbox',
   'fields',
   'deals',
   'members',
@@ -62,6 +64,7 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace', adminOnly: true },
   templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
   'quick-replies': { id: 'quick-replies', label: 'Quick replies', icon: Zap, group: 'workspace' },
+  inbox: { id: 'inbox', label: 'Inbox', icon: Inbox, group: 'workspace' },
   fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace', adminOnly: true },
   deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace', adminOnly: true },
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace', adminOnly: true },

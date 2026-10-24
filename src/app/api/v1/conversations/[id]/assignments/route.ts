@@ -1,7 +1,7 @@
 // ============================================================
 // GET /api/v1/conversations/{id}/assignments — the chat's handoff
 // history (scope: conversations:read), oldest first: who assigned it
-// to whom, and when (migration 048). Account-scoped: a foreign id → 404.
+// to whom, and when (migration 901). Account-scoped: a foreign id → 404.
 // ============================================================
 
 import { requireApiKey } from '@/lib/auth/api-context';

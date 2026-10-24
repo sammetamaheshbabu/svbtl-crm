@@ -41,6 +41,7 @@ import {
   isRecipientNotAllowedError,
 } from '@/lib/whatsapp/phone-utils';
 import { resolveContactSendTarget } from '@/lib/whatsapp/wa-identity';
+import { applyPendingMessageStatuses } from '@/lib/whatsapp/message-status-sync';
 import type { MessageTemplate } from '@/types';
 import { hasMinRole, type AccountRole } from '@/lib/auth/roles';
 import { assignConversation } from '@/lib/conversations/assign';
@@ -48,6 +49,7 @@ import {
   resolveTemplateRow,
   templateBodyParams,
   templateContentText,
+  templateHeaderMediaUrl,
 } from '@/lib/whatsapp/template-body';
 
 export const MEDIA_KINDS = ['image', 'video', 'document', 'audio'] as const;
@@ -521,7 +523,10 @@ export async function sendMessageToConversation(
       sender_id: senderId ?? null,
       content_type: messageType,
       content_text: persistedText,
-      media_url: mediaUrl || null,
+      media_url:
+        messageType === 'template'
+          ? templateHeaderMediaUrl(templateRow, templateMessageParams)
+          : mediaUrl || null,
       template_name: templateName || null,
       interactive_payload:
         messageType === 'interactive' ? interactivePayload : null,
@@ -540,6 +545,8 @@ export async function sendMessageToConversation(
       500
     );
   }
+
+  await applyPendingMessageStatuses(supabaseAdmin(), accountId, waMessageId);
 
   const lastMessageText =
     messageType === 'interactive'

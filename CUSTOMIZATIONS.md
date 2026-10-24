@@ -10,8 +10,8 @@ document records **every change we made on top of upstream and why**, so that:
 |---|---|
 | Upstream | `https://github.com/ArnasDon/wacrm` (remote: `upstream`) |
 | This fork | `https://github.com/sammetamaheshbabu/svbtl-crm` (remote: `origin`) |
-| Fork point (merge-base) | `27c6bdf` |
-| Last reviewed | 2026-10-24 — fork is 16 commits (24 with merges) ahead of the fork point `27c6bdf` |
+| Fork point (merge-base) | `34bce1a` (upstream synced 2026-10-24; originally `27c6bdf`) |
+| Last reviewed | 2026-10-24 — after merging upstream `34bce1a` (branch `upstream-sync-2026-10-24`) |
 
 > **Scope.** This file documents **code** changes (tracked in git) plus the **deployment
 > configuration** we rely on (not in git). It intentionally contains **no secrets** — tokens,
@@ -30,7 +30,7 @@ git diff --stat upstream/main...HEAD    # just the file list
 git log --oneline upstream/main..HEAD   # our commits
 ```
 
-Files we changed vs upstream (55, not counting this file; section letter in brackets):
+Files we changed vs upstream (61, not counting this file; section letter in brackets):
 
 ```
 .gitignore                                                    [E]
@@ -54,8 +54,9 @@ src/app/api/v1/quick-replies/route.ts (+ route.test.ts)       [K]  new
 src/app/api/whatsapp/send/route.ts (+ route.test.ts)          [G, H, I, J]
 src/components/contacts/contact-detail-view.tsx               [J]
 src/components/inbox/conversation-list.tsx                    [J]
-src/components/inbox/message-bubble.tsx                       [G]
+src/components/inbox/message-bubble.tsx                       [D, G]
 src/components/inbox/message-composer.tsx                     [D, K]
+src/components/inbox/message-media.tsx                        [D]
 src/components/inbox/message-thread.tsx                       [G, H, I, J, K]
 src/components/inbox/new-chat-dialog.tsx                      [J]  new
 src/components/inbox/quick-reply-picker.tsx                   [K]
@@ -67,17 +68,24 @@ src/components/settings/settings-sections.ts                  [C]
 src/components/ui/password-input.tsx                          [L]  new
 src/lib/api/v1/conversations.ts (+ .test.ts)                  [F, G, H, I]
 src/lib/api/v1/sender.ts (+ .test.ts)                         [G, H]  new
+src/lib/auth/redeem-invitation-migration.test.ts              [M]
 src/lib/conversations/assign.ts (+ .test.ts)                  [I]  new
+src/lib/dashboard/agent-scope-migration.test.ts               [M]  new
 src/lib/inbox/assignment-events.ts (+ .test.ts)               [I]  new
 src/lib/quick-replies/placeholders.ts (+ .test.ts)            [K]  new
 src/lib/webhooks/events.ts                                    [I]
-src/lib/whatsapp/send-message.ts                              [G, H, I]
+src/lib/whatsapp/send-message.ts                              [G, H]
 src/lib/whatsapp/send-message.assignment.test.ts              [H, I]  new
 src/lib/whatsapp/start-chat.ts (+ .test.ts)                   [J]  new
-supabase/migrations/047_agent_conversation_visibility.sql     [H]  new
-supabase/migrations/048_conversation_assignments.sql          [I]  new
-supabase/migrations/049_contact_whatsapp_opt_in.sql           [J]  new
+supabase/migrations/900_agent_conversation_visibility.sql     [H]  new (was 047)
+supabase/migrations/901_conversation_assignments.sql          [I]  new (was 048)
+supabase/migrations/902_contact_whatsapp_opt_in.sql           [J]  new (was 049)
+supabase/migrations/903_dashboard_agent_scope.sql             [M]  new
 ```
+
+**Fork migrations are numbered 900+.** Upstream kept adding 047, 048, 049, so ours moved to a
+range it won't reach: they always sort (and run, on a fresh setup) after upstream's. A new fork
+migration takes the next 90x number.
 
 ### A. Branding → "SVBTL CRM"
 **Commits:** `57fcc9e`, `31b7b8f`
@@ -156,8 +164,9 @@ the `adminOnly` tagging after a merge.
 phone users couldn't add line breaks (no practical Shift+Enter on a phone).
 **Upstream-merge risk:** *Medium–High.* The composer is actively developed upstream, so this file
 is the most likely to conflict.
-**Upstreamed:** submitted as **[ArnasDon/wacrm#656](https://github.com/ArnasDon/wacrm/pull/656)**.
-If/when it's merged, pull it from upstream and **drop this customization** to remove the drift.
+**Upstreamed:** the original mobile fix (wrap the buttons below the box, Enter = newline on touch)
+was merged upstream as **[ArnasDon/wacrm#656](https://github.com/ArnasDon/wacrm/pull/656)** and came
+back with the 2026-10-24 sync. Everything else in this section is still ours.
 
 ### E. Secret-leak hardening + ops docs
 **Commits:** `57fcc9e`, `31b7b8f`
@@ -213,12 +222,12 @@ changes `sendMessage`, keep passing `senderId` through to the insert.
 
 ### H. Agents see their own and unassigned chats; claim on reply
 **Commit:** `b0a6af7` (branch `agent-visibility`, merged as `f765022`, 2026-10-19)
-**Files:** `supabase/migrations/047_agent_conversation_visibility.sql`, `src/lib/whatsapp/send-message.ts`,
+**Files:** `supabase/migrations/900_agent_conversation_visibility.sql`, `src/lib/whatsapp/send-message.ts`,
 `src/app/api/whatsapp/send/route.ts`, `src/app/api/v1/messages/route.ts`, `src/lib/api/v1/sender.ts`,
 `src/app/api/v1/conversations/route.ts`, `src/lib/api/v1/conversations.ts`,
 `src/components/inbox/message-thread.tsx`
 
-- **Visibility (migration 047):** the `conversations` RLS policies now let owners and admins see
+- **Visibility (migration 900, was 047):** the `conversations` RLS policies now let owners and admins see
   every chat, and agents and viewers only chats assigned to them or unassigned. Messages and
   reactions follow automatically, since their policies look the conversation up. An agent may still
   hand a chat they can see to someone else (separate `WITH CHECK`).
@@ -236,19 +245,19 @@ configured in Automations ("Tag added" → "Assign conversation"), not in code.
 `conversations.test.ts` (`assignmentFilter`).
 **Upstream-merge risk:** *High.* Changes RLS on a core table and the shared send path. If upstream
 changes `conversations` policies, re-apply the agent rule on top of theirs.
-**Applying the migration:** run 047 in the Supabase SQL editor (the schema is otherwise
+**Applying the migration:** run 900 (was 047) in the Supabase SQL editor (the schema is otherwise
 upstream's). It is safe to run before or after the code deploys.
 **Consumer:** the mobile app's backend filters chats the same way for agents.
 
 ### I. Handoff history and handing chats over
 **Commit:** `5b97baf` (branch `handoff-history`, merged as `67e52d5`, 2026-10-19)
-**Files:** `supabase/migrations/048_conversation_assignments.sql`, `src/lib/conversations/assign.ts`,
+**Files:** `supabase/migrations/901_conversation_assignments.sql`, `src/lib/conversations/assign.ts`,
 `src/app/api/conversations/[conversationId]/assign/route.ts`, `src/lib/inbox/assignment-events.ts`,
 `src/components/inbox/message-thread.tsx`, `src/lib/whatsapp/send-message.ts`, `src/lib/api/v1/conversations.ts`,
 `src/app/api/v1/conversations/[id]/route.ts` (PATCH), `src/app/api/v1/conversations/[id]/assignments/route.ts`,
 `src/app/api/v1/members/route.ts`, `src/lib/webhooks/events.ts`, `messages/*.json` (`Inbox.handoff`)
 
-- **History (migration 048):** a trigger records every change of `assigned_agent_id` in
+- **History (migration 901, was 048):** a trigger records every change of `assigned_agent_id` in
   `conversation_assignments` (from, to, who did it, when), whichever path made it. Readable by
   whoever can see the chat. `assign_conversation()` assigns and names the actor for service-role
   callers (it sets `app.assignment_actor` for its transaction); signed-in users are named by
@@ -269,13 +278,13 @@ the new owner is alerted on their phone, and the chat keeps a record of each han
 **Tests:** `assign.test.ts`, `assignment-events.test.ts`, `send-message.assignment.test.ts`.
 **Upstream-merge risk:** *Medium.* New table and function; the assignee picker and the send path
 call them. If upstream changes the picker, keep it going through the assign route.
-**Applying the migration:** run 048 in the Supabase SQL editor **before** deploying this code — the
+**Applying the migration:** run 901 (was 048) in the Supabase SQL editor **before** deploying this code — the
 assignee picker and claim on reply call `assign_conversation()`.
 **Consumer:** the mobile app shows the history, assigns from the chat, and alerts the new owner.
 
 ### J. New chat: message a new number with a template
 **Branch:** `new-chat-quick-replies` (2026-10-24)
-**Files:** `supabase/migrations/049_contact_whatsapp_opt_in.sql`, `src/lib/whatsapp/start-chat.ts`,
+**Files:** `supabase/migrations/902_contact_whatsapp_opt_in.sql`, `src/lib/whatsapp/start-chat.ts`,
 `src/app/api/whatsapp/send/route.ts`, `src/components/inbox/new-chat-dialog.tsx`,
 `src/components/inbox/conversation-list.tsx`, `src/app/(dashboard)/inbox/page.tsx`,
 `src/components/inbox/template-picker.tsx`, `src/components/inbox/message-thread.tsx`,
@@ -293,7 +302,7 @@ assignee picker and claim on reply call `assign_conversation()`.
   their name is kept. An agent can't start a chat another member is handling (403 naming them);
   a new chat an agent starts is claimed by them, as with any reply. The response now includes
   `conversation_id` on every path.
-- **Opt-in (migration 049):** `contacts.whatsapp_opt_in_at` / `whatsapp_opt_in_by`, set after a
+- **Opt-in (migration 902, was 049):** `contacts.whatsapp_opt_in_at` / `whatsapp_opt_in_by`, set after a
   successful send, first confirmation only. Once recorded the dialog shows "Opt-in recorded on …"
   instead of the tick. `POST /api/v1/messages` takes `opt_in_confirmed: true` and records it the
   same way (by `sender_user_id`, if given).
@@ -313,7 +322,7 @@ an approved template as the first message, and requires the customer's opt-in.
 path: template only, opt-in recorded, refusal before Meta).
 **Upstream-merge risk:** *Medium.* Adds a path to the send route and a field to the template picker;
 if upstream changes either, keep `phone` going through `resolveStartChat`.
-**Applying the migration:** run 049 in the Supabase SQL editor **before** deploying this code — the
+**Applying the migration:** run 902 (was 049) in the Supabase SQL editor **before** deploying this code — the
 send route writes the new columns.
 **Consumer:** the mobile app can start chats through `POST /api/v1/messages` with `to` + a
 template, passing `opt_in_confirmed`.
@@ -358,6 +367,26 @@ the composer's unlabelled "+" menu). The table was empty and the entry hard to f
 
 ---
 
+### M. Upstream sync 2026-10-24: keeping agents to their own chats
+**Branch:** `upstream-sync-2026-10-24`
+**Files:** `supabase/migrations/903_dashboard_agent_scope.sql`,
+`src/lib/dashboard/agent-scope-migration.test.ts`, `src/lib/auth/redeem-invitation-migration.test.ts`
+
+- Upstream's new dashboard (`dashboard_overview`, migration 059) runs as SECURITY DEFINER and
+  listed customer names, numbers and previews from every chat in its "needs attention" queue and
+  failed-messages list. Migration 903 redefines it unchanged except that, for anyone below admin,
+  those two lists skip chats assigned to someone else. Counts and charts stay team-wide.
+- Upstream's `redeem_invitation` (047) checks every account table for data before deleting an
+  old account; its test now exempts `conversation_assignments` (901), whose rows always belong to
+  a conversation, which is already checked.
+
+**Why:** agents see only their own and unassigned chats (H); the dashboard must not undo that.
+**Tests:** `agent-scope-migration.test.ts` fails if 903 stops being the last definition, loses the
+filter, or drifts from upstream's function in any other way.
+**Upstream-merge risk:** *Medium.* If upstream changes `dashboard_overview`, copy their new
+version into a new 90x migration and re-apply the filter (the test will flag it).
+**Applying the migration:** run 903 **after** upstream's 059.
+
 ## 2. Deployment configuration (NOT in git — recreate per deployment)
 
 These are **not** code changes; they're how this instance is wired. A fresh fork must set its own.
@@ -369,7 +398,9 @@ These are **not** code changes; they're how this instance is wired. A fresh fork
 - **Env vars** (names only — values in `.env.local` / Vercel, see `.env.local.example`):
   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
   `ENCRYPTION_KEY`, `META_APP_SECRET`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_LOCALE`.
-- **Supabase:** schema is **upstream's migrations, plus our `047_agent_conversation_visibility.sql`, `048_conversation_assignments.sql` and `049_contact_whatsapp_opt_in.sql`** (run by hand in the SQL editor). Deployment-specific config:
+- **Supabase:** schema is **upstream's migrations, plus our `900`–`903` fork migrations** (run by hand in the SQL editor; 900–902 were applied as
+047–049 before the renumbering, so they need no re-run). The 2026-10-24 sync brought upstream
+migrations 047, 048, 049, 051, 052, 053, 054 and 059; run those, then our 903, before deploying it. Deployment-specific config:
   Auth → URL Configuration → **Site URL = the production domain** + Redirect URLs (so confirmation
   / reset emails don't fall back to `localhost`).
 - **Hosting:** Vercel, custom domain behind Cloudflare. `NEXT_PUBLIC_*` are inlined at build, so a
@@ -402,8 +433,10 @@ git merge upstream/main                     # or: git rebase upstream/main
 
 After merging, **re-check the medium/high-risk files** from Section 1 — in likelihood order:
 
-1. `supabase/migrations/` (H, I, J) — if upstream adds a migration numbered 047–049, renumber ours,
-   and if it changes the `conversations` policies, re-apply the agent rule on top of theirs.
+1. `supabase/migrations/` (H, I, J, M) — ours are 900+, so numbers no longer clash. If upstream
+   changes the `conversations` policies, re-apply the agent rule (900) on top of theirs; if it
+   changes `dashboard_overview`, redo 903 (M). List the new upstream migrations and run them in
+   the SQL editor, then any new 90x of ours.
 2. `src/lib/whatsapp/send-message.ts` and `src/app/api/whatsapp/send/route.ts` (G, H, I, J) — keep
    `senderId`, the who-may-send check, claim on reply, and the `phone` path.
 3. `src/components/inbox/message-composer.tsx` (D, K) — most actively changed upstream; keep the

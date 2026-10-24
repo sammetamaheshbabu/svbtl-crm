@@ -1,5 +1,5 @@
 -- ============================================================
--- 048 — Handoff history: who assigned each chat to whom, and when
+-- 901 (SVBTL fork; was 048) — Handoff history: who assigned each chat to whom, and when
 --
 -- Every change of conversations.assigned_agent_id is recorded by a
 -- trigger, whichever path made it (the inbox, claim on reply, an
@@ -28,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_conversation_assignments_conversation
 ALTER TABLE conversation_assignments ENABLE ROW LEVEL SECURITY;
 
 -- Readable by whoever can see the chat: the lookup below is itself
--- filtered by the conversations policy (047). Rows are written only by
+-- filtered by the conversations policy (900). Rows are written only by
 -- the trigger, so there is no insert/update policy.
 DROP POLICY IF EXISTS conversation_assignments_select ON conversation_assignments;
 CREATE POLICY conversation_assignments_select ON conversation_assignments FOR SELECT USING (
