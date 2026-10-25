@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ReplyQuote } from "./reply-quote";
+import { DeliveryErrorHelp } from "./delivery-error-help";
 import { MessageReactions } from "./message-reactions";
 import {
   MediaAudioBubble,
@@ -466,7 +467,14 @@ export function MessageBubble({
           title={failure}
         >
           {t("notDelivered")}: {failure}
+          {message.error_code ? ` (${message.error_code})` : ""}
         </p>
+      )}
+      {failure && (
+        <DeliveryErrorHelp
+          code={message.error_code}
+          className="mt-0.5 max-w-80 px-1 text-[11px]"
+        />
       )}
       {reactions && reactions.length > 0 && onToggleReaction && (
         <MessageReactions

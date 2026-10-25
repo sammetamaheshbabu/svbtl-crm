@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { DeliveryErrorHelp } from '@/components/inbox/delivery-error-help'
 import type { FailedMessage } from '@/lib/dashboard/overview'
 
 export function FailedMessagesDialog({
@@ -59,6 +60,7 @@ export function FailedMessagesDialog({
                         : m.errorTitle
                       : t('unknownReason')}
                   </p>
+                  <DeliveryErrorHelp code={m.errorCode} className="mt-1" />
                   {m.preview ? (
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">{m.preview}</p>
                   ) : null}

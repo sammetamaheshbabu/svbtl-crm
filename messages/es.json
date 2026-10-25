@@ -3040,5 +3040,68 @@
     "loadMore": "Cargar más ({count} restantes)",
     "uploadNotAllowed": "Este tipo o tamaño de archivo no se puede usar aquí.",
     "uploadFailed": "No se pudo subir el archivo."
+  },
+  "DeliveryErrors": {
+    "fixLabel": "Qué hacer",
+    "marketingLimit": {
+      "what": "WhatsApp limita cuántos mensajes de marketing recibe una persona de todas las empresas. Esta persona alcanzó ese límite, así que WhatsApp retuvo nuestra plantilla de marketing. No es un problema de nuestro número ni de la plantilla.",
+      "fix": "No lo reenvíes ahora. Pide al cliente que nos escriba primero (en una llamada o por SMS) y luego envía un mensaje normal o una respuesta rápida, que este límite no afecta. O vuelve a probar la plantilla después de un día o más."
+    },
+    "undeliverable": {
+      "what": "WhatsApp no pudo entregar a este número. Normalmente el número no está en WhatsApp, la persona no aceptó los últimos términos de WhatsApp o su app es muy antigua.",
+      "fix": "Reenviar no ayudará. Verifica el número con el cliente y pregúntale qué número usa en WhatsApp, o pídele que nos escriba primero."
+    },
+    "windowClosed": {
+      "what": "Pasaron más de 24 horas desde que el cliente nos escribió, así que WhatsApp solo acepta plantillas aprobadas.",
+      "fix": "Envía una plantilla aprobada o espera a que el cliente vuelva a escribirnos."
+    },
+    "marketingOptOut": {
+      "what": "Este cliente pidió a WhatsApp que deje de enviarle mensajes de marketing de nuestra empresa.",
+      "fix": "No le envíes plantillas de marketing. Las respuestas normales siguen funcionando cuando nos escribe."
+    },
+    "metaExperiment": {
+      "what": "WhatsApp está haciendo una prueba que retiene mensajes de marketing para algunas personas, y este número está incluido.",
+      "fix": "No hay nada que corregir de nuestro lado. Contáctalo por otra vía o espera a que nos escriba."
+    },
+    "spamLimit": {
+      "what": "WhatsApp está limitando nuestros mensajes porque los recientes se bloquearon, denunciaron o ignoraron demasiado.",
+      "fix": "Pausa los envíos masivos, escribe solo a quien espera nuestros mensajes y revisa la calidad del número en WhatsApp Manager."
+    },
+    "pairLimit": {
+      "what": "Enviamos demasiados mensajes a esta persona en poco tiempo.",
+      "fix": "Espera un poco antes de volver a enviar."
+    },
+    "unsupportedType": {
+      "what": "WhatsApp no admite este tipo de mensaje.",
+      "fix": "Envíalo como texto, imagen o documento."
+    },
+    "mediaUpload": {
+      "what": "WhatsApp no pudo obtener o procesar el archivo adjunto.",
+      "fix": "Comprueba que el archivo se abre y está dentro de los límites de tamaño de WhatsApp, y adjúntalo de nuevo."
+    },
+    "payment": {
+      "what": "Hay un problema de pago en nuestra cuenta de WhatsApp Business.",
+      "fix": "Un administrador debe revisar el método de pago en Meta Business Settings → Facturación."
+    },
+    "templateParams": {
+      "what": "Los valores de la plantilla no coinciden con lo que la plantilla espera.",
+      "fix": "Completa todas las variables de la plantilla (ninguna vacía) y vuelve a enviarla."
+    },
+    "templateMissing": {
+      "what": "Esta plantilla no existe en ese idioma o se eliminó.",
+      "fix": "Sincroniza las plantillas desde Meta y elige una aprobada."
+    },
+    "templatePaused": {
+      "what": "Meta pausó o desactivó esta plantilla por baja calidad o comentarios de clientes.",
+      "fix": "Usa otra plantilla aprobada. Un administrador puede revisarla en WhatsApp Manager."
+    },
+    "accountRestricted": {
+      "what": "Meta restringió nuestra cuenta de WhatsApp Business.",
+      "fix": "Un administrador debe revisar Meta Business Manager → Calidad de la cuenta y apelar si es necesario."
+    },
+    "temporary": {
+      "what": "WhatsApp tuvo un problema temporal al enviar este mensaje.",
+      "fix": "Vuelve a enviarlo en unos minutos."
+    }
   }
 }
