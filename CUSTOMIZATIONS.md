@@ -842,6 +842,10 @@ deployment recreates these in the UI.
     - Adds the tags Follow-up Studio and **Studio Owner**.
     - Sends the website link and "Our team will contact you shortly", with the buttons Call Back /
       Live Demo / More Details.
+  - **"Studio · I'm interested"** (Normal, exact; added 2026-10-25): the **I'm interested** button on
+    the studio offer and plans quick replies (also accepts the curly apostrophe "I’m interested").
+    Adds the tags **Studio Owner** and Follow-up Studio and replies "Thank you for your interest! 🙏
+    Our team will contact you shortly." The Telugu button (నాకు ఆసక్తి ఉంది) has no automation yet.
   - **Tooling:** the setup was generated and checked with scripts kept outside the repo: a plan file,
     a simulator that replays sample messages and every button / row tap under four tag states, and
     an apply script that backs up all automations first. The last backup before the rebuild is
@@ -856,9 +860,10 @@ deployment recreates these in the UI.
     Follow-up Studio aren't back-filled; they get the two-button question once.
 - **Message templates** — Utility templates approved by Meta (`inquiry_received`,
   `callback_scheduled`, `demo_confirmation`, `booking_confirmation`, `appointment_reminder`), Meta's
-  sample `hello_world`, and `studio_website_intro_v1` (en) / `studio_website_intro_v1_te` (te)
-  pending approval at last review.
-- **Quick replies** (14):
+  sample `hello_world`, and the **Marketing** templates `studio_website_intro_v1` (en) /
+  `studio_website_intro_v1_te` (te), approved. Being Marketing, they are subject to Meta's
+  per-person marketing limit (error 131049, see section S).
+- **Quick replies** (15):
   - 12 starter text replies added 2026-10-24: Greeting, Ask for details, Studio / App & website /
     AIoT / EduSMS enquiry, Quote coming, Offer a call back, Offer a live demo, Checking with team,
     Follow-up, Thank you — several using `{name}`.
@@ -866,6 +871,12 @@ deployment recreates these in the UI.
     header image `chat-media/account-<id>/quick-replies/studio-website.jpg`, fill-ins `{{1}}` name,
     `{{2}}` sender, `{{3}}` city, `{{4}}` starting price, and three buttons with the same ids in both
     languages: `studio_site_interested`, `studio_site_not_interested`, `studio_site_more_details`.
+  - **Studio website plans**, added 2026-10-25: a button message with the same header image,
+    fill-ins `{{1}}` name and `{{2}}` agent, the Base / Pro / Premium prices (Rs. 4,999 / 9,999 /
+    15,999 a year) and the link `https://www.svbtechlabs.com/studioweb/pricing` in the text. A
+    website button can't share a message with reply buttons. Buttons: **I'm interested**
+    (`studio_site_interested`) and **Arrange a Call Back** (`studio_plans_call_back`), both handled by
+    the automations above.
 - **Media** — uploads and mirrored customer media in `chat-media/account-<id>/` (section P).
 
 ## 6. Known gaps and follow-ups
