@@ -3040,5 +3040,68 @@
     "loadMore": "Load more ({count} left)",
     "uploadNotAllowed": "This file type or size can't be used here.",
     "uploadFailed": "Couldn't upload the file."
+  },
+  "DeliveryErrors": {
+    "fixLabel": "What to do",
+    "marketingLimit": {
+      "what": "WhatsApp limits how many marketing messages one person gets from all businesses. This person reached that limit, so WhatsApp held our marketing template back. It is not a problem with our number or the template.",
+      "fix": "Don't resend now. Ask the customer to message us first (on a call or by SMS) — then send a normal message or quick reply, which this limit doesn't affect. Or try the template again after a day or more."
+    },
+    "undeliverable": {
+      "what": "WhatsApp couldn't deliver to this number. Usually the number isn't on WhatsApp, the person hasn't accepted WhatsApp's latest terms, or their app is very old.",
+      "fix": "Resending won't help. Check the number with the customer and ask which number they use for WhatsApp, or ask them to message us first."
+    },
+    "windowClosed": {
+      "what": "More than 24 hours have passed since the customer last wrote to us, so WhatsApp only accepts approved templates.",
+      "fix": "Send an approved template instead, or wait for the customer to message us again."
+    },
+    "marketingOptOut": {
+      "what": "This customer told WhatsApp to stop marketing messages from our business.",
+      "fix": "Don't send them marketing templates. Normal replies still work when they message us."
+    },
+    "metaExperiment": {
+      "what": "WhatsApp is running a test that holds back marketing messages for some people, and this number is in it.",
+      "fix": "Nothing to fix on our side. Reach them another way, or wait for them to message us."
+    },
+    "spamLimit": {
+      "what": "WhatsApp is limiting our messages because recent ones were blocked, reported or ignored too often.",
+      "fix": "Pause bulk sends, send only to people who expect our messages, and check the number's quality in WhatsApp Manager."
+    },
+    "pairLimit": {
+      "what": "We sent this person too many messages in a short time.",
+      "fix": "Wait a little before sending again."
+    },
+    "unsupportedType": {
+      "what": "WhatsApp doesn't support this kind of message.",
+      "fix": "Send it as text, an image or a document instead."
+    },
+    "mediaUpload": {
+      "what": "WhatsApp couldn't fetch or process the attached file.",
+      "fix": "Check the file opens and is within WhatsApp's size limits, then attach it again."
+    },
+    "payment": {
+      "what": "There is a payment problem on our WhatsApp Business account.",
+      "fix": "An admin should check the payment method in Meta Business Settings → Billing."
+    },
+    "templateParams": {
+      "what": "The template's fill-in values didn't match what the template expects.",
+      "fix": "Fill every variable in the template (none empty) and send again."
+    },
+    "templateMissing": {
+      "what": "This template doesn't exist in that language, or it was deleted.",
+      "fix": "Sync templates from Meta and pick an approved one."
+    },
+    "templatePaused": {
+      "what": "Meta paused or disabled this template because of low quality or customer feedback.",
+      "fix": "Use a different approved template. An admin can review it in WhatsApp Manager."
+    },
+    "accountRestricted": {
+      "what": "Meta has restricted our WhatsApp Business account.",
+      "fix": "An admin should check Meta Business Manager → Account quality and appeal if needed."
+    },
+    "temporary": {
+      "what": "WhatsApp had a temporary problem sending this message.",
+      "fix": "Try sending it again in a few minutes."
+    }
   }
 }

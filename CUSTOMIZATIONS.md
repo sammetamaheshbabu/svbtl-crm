@@ -28,7 +28,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 
 - [At a glance](#at-a-glance)
 - [Who can do what](#who-can-do-what)
-- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–R
+- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–S
 - [2. Database migrations](#2-database-migrations)
 - [3. Public API changes (for the mobile app)](#3-public-api-changes-for-the-mobile-app)
 - [4. Deployment configuration](#4-deployment-configuration-not-in-git--recreate-per-deployment)
@@ -681,6 +681,40 @@ service menu again.
 **Upstream-merge risk:** *Low–Medium.* The dispatch loop in `runAutomationsForTrigger` and
 `evaluateCondition` are upstream code; if they change, re-apply the filter and the `any_tag` case.
 
+### S. Plain-language help for failed messages
+**Branch:** `delivery-error-help` (2026-10-25)
+**Files:** `src/lib/whatsapp/delivery-error-help.ts` (Meta error code → help key),
+`src/components/inbox/delivery-error-help.tsx`, `src/components/dashboard/failed-messages-dialog.tsx`,
+`src/components/inbox/message-bubble.tsx`, `messages/*.json` (`DeliveryErrors.*`).
+
+- Meta's own text ("…healthy ecosystem engagement", "Message undeliverable") doesn't say what
+  happened or what to do. The dashboard's **Failed messages** list and the "Not delivered" line
+  under a failed chat bubble now add two lines: **what happened** and **what to do**. The bubble
+  line also shows the code.
+- Codes covered:
+  - 131049: per-person marketing limit;
+  - 131026: undeliverable (not on WhatsApp, old app, terms not accepted);
+  - 131047 / 470: 24-hour window closed;
+  - 131050: opted out of marketing;
+  - 130472: Meta experiment;
+  - 131048: spam limit;
+  - 131056: too many messages to one person;
+  - 131051: unsupported type;
+  - 131053: media;
+  - 131042: payment;
+  - 132000 / 132012: template values;
+  - 132001: template missing;
+  - 132015 / 132016: template paused or disabled;
+  - 131031 / 368: account restricted;
+  - 1 / 2 / 131000 / 131016: temporary.
+
+  Unknown codes show Meta's text only, as before.
+
+**Why:** agents saw raw Meta errors on studio-website templates (131049, 131026) and couldn't tell
+whether to resend.
+**Tests:** `delivery-error-help.test.ts` (mapping, and text present in all four languages).
+**Upstream-merge risk:** *Low.* Two small additions to upstream components.
+
 ---
 
 ## 2. Database migrations
@@ -921,3 +955,5 @@ If a customization has since landed upstream, drop ours to reduce drift.
 | 2026-10-24 | `388ce75`, `883d797`, `c33abbf` (`1c01455`) | Edit contact in chat, quick reply image + fill-ins, Media Library (N, O, P) |
 | 2026-10-24 | `c4eb34d`, `3c9398e` (`a3926b2`) | Agent restrictions, New chat lookup, handover requests (Q) |
 | 2026-10-24 | `01dcc93` (`4d32b0c`) | Keyword priority, "Contact has any tag" condition (R); studio automations rebuilt (section 5) |
+| 2026-10-24 | `067ecdf` (`47ebd2d`) | Automation-added tags show live in the chat panel (N) |
+| 2026-10-25 | `delivery-error-help` | Plain-language help for failed messages (S) |
