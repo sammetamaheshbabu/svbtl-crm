@@ -827,9 +827,15 @@ deployment recreates these in the UI.
     - "Studio · Wedding Photography" stays silent when the message names a more specific service
       (pre-wedding, Hindu, Christian, traditional / Telugu / South Indian, anniversary), so only that
       service replies.
+    - A message that mentions CCTV / CC TV / security camera / surveillance / SmartNest gets the
+      **SmartNest topic list** instead (added 2026-10-29). Without this, "CCTV for my apartment"
+      would match Real Estate and "CCTV for my restaurant" would match Food. A silent match would also
+      block the lower-priority SmartNest welcome. The "message contains" condition checks one phrase at
+      a time, which is why each service automation now has about 34 steps.
   - **"Studio · Photography enquiry"** (Low): matches studio / photography / photographer /
-    photoshoot / shoot / photos / camera, including a tap on the menu's **Studio** button. It routes
-    by tag:
+    photoshoot / shoot / photos, including a tap on the menu's **Studio** button. "camera" was removed
+    on 2026-10-29, and it stays silent on CCTV words, so the SmartNest welcome answers those. It
+    routes by tag:
     - Studio Owner → owner reply;
     - Studio Customer → services list;
     - no studio tag → asks "Book a photoshoot" / "Website for studio".
@@ -846,18 +852,49 @@ deployment recreates these in the UI.
     the studio offer and plans quick replies (also accepts the curly apostrophe "I’m interested").
     Adds the tags **Studio Owner** and Follow-up Studio and replies "Thank you for your interest! 🙏
     Our team will contact you shortly." The Telugu button (నాకు ఆసక్తి ఉంది) has no automation yet.
-  - **Tooling:** the setup was generated and checked with scripts kept outside the repo: a plan file,
-    a simulator that replays sample messages and every button / row tap under four tag states, and
-    an apply script that backs up all automations first. The last backup before the rebuild is
-    `automations-backup-2026-10-24T17-52-13-175Z.json`. To rebuild by hand, follow the list above.
+  - **SmartNest (AIoT → CCTV), added 2026-10-29.** Answers follow `https://www.svbtechlabs.com/smartnest`.
+    Every SmartNest automation adds the tags **New AioT** and **SmartNest**.
+    - **"SmartNest · Welcome"** (Low, whole words): SmartNest / Smart Nest / CCTV / CC TV / CCTV
+      camera(s) / security camera(s) / surveillance / IP camera(s) / DVR / NVR, and the **More CCTV
+      questions** button. It sends a short intro, the SmartNest link and a **topic list**: CCTV for
+      home/business, CCTV AMC & maintenance, Remote monitoring, CCTV installation cost, Areas we serve,
+      Repair existing CCTV, Arrange a Call Back. The last row is handled by the existing Arrange a
+      Call Back automation. Example trigger: "Hello SVB Tech Labs I am interested in your AioT
+      SmartNest services".
+    - **Six answers** (Normal), each fired by its list row or by a typed question. Each replies with
+      the website's answer, a free-site-survey line, the link, and the buttons **Arrange a Call Back** /
+      **More CCTV questions**:
+      - "SmartNest · Home & business CCTV": e.g. "install CCTV", "CCTV for my shop / office / home".
+        It steps aside when the message also asks a price.
+      - "SmartNest · CCTV AMC": AMC, annual maintenance, maintenance contract, CCTV service.
+      - "SmartNest · Remote monitoring": remote monitoring / video / viewing / access, view on phone.
+      - "SmartNest · CCTV cost": CCTV cost / price / charges / quote, how much does CCTV, security
+        camera price. The answer is that the price depends on the site, with an itemised quote after a
+        free survey; no prices are quoted.
+      - "SmartNest · Areas we serve": which areas, do you serve, do you cover, service area. It lists
+        the Visakhapatnam areas plus Hyderabad. It isn't CCTV-only, so a studio customer asking
+        "which areas do you serve" also gets this answer.
+      - "SmartNest · Repair & upgrade": CCTV repair, camera not working, not recording, offline,
+        upgrade CCTV.
+  - **Tooling:** the setup was generated and checked with scripts kept outside the repo:
+    - plan files for studio and SmartNest;
+    - simulators that replay sample messages and every button / row tap, under four tag states and
+      against the stored live rows;
+    - an apply script that backs up all automations first.
+
+    Last backups: `automations-backup-2026-10-24T17-52-13-175Z.json` (before the studio rebuild) and
+    `automations-backup-2026-10-29T17-27-47-530Z.json` (before SmartNest). To rebuild by hand,
+    follow the list above.
   - **Not covered yet:** "Tag added" → "Assign conversation" routing for studio leads, and a Pocket
     CRM reply (it currently gets the greeting menu).
-- **Tags** — 17:
+- **Tags** — 18:
   - 15 department / stage tags (New / Follow-up / Done × Studio, AIoT, SVBTL, EduSMS, plus Our Team,
     Arrange a Call Back, Arrange a Live Demo);
   - **Studio Customer** (books photoshoots) and **Studio Owner** (wants a website for their studio),
     both added 2026-10-24 and set by the studio automations above. Contacts tagged earlier only with
     Follow-up Studio aren't back-filled; they get the two-button question once.
+  - **SmartNest** (CCTV / security enquiries, an AIoT sub-category), added 2026-10-29 and set with
+    New AioT by the SmartNest automations.
 - **Message templates** — Utility templates approved by Meta (`inquiry_received`,
   `callback_scheduled`, `demo_confirmation`, `booking_confirmation`, `appointment_reminder`), Meta's
   sample `hello_world`, and the **Marketing** templates `studio_website_intro_v1` (en) /
