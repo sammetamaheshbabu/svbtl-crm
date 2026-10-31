@@ -813,7 +813,8 @@ deployment recreates these in the UI.
     Development / More Options), AioT Interest, App Development Interest, More Options, More Details,
     Arrange a Call Back, Arrange a Live Demo.
   - **14 studio service replies, "Studio · <service>"** (Normal, whole-word keywords plus synonyms,
-    e.g. wedding / marriage / pelli / bride). There is one for each page under
+    e.g. wedding / marriage / pelli / bride; photo-specific phrases such as "property shoot" or
+    "restaurant photos" for the services named after a business type). There is one for each page under
     `https://studio.svbtechlabs.com/services/`: wedding, pre-wedding, Hindu wedding, Christian
     wedding, baby shower, maternity & newborn, birthday, anniversary, corporate event, real estate,
     food, fashion, product, portrait. Each one:
@@ -827,15 +828,18 @@ deployment recreates these in the UI.
     - "Studio · Wedding Photography" stays silent when the message names a more specific service
       (pre-wedding, Hindu, Christian, traditional / Telugu / South Indian, anniversary), so only that
       service replies.
-    - A message that mentions CCTV / CC TV / security camera / surveillance / SmartNest gets the
-      **SmartNest topic list** instead (added 2026-10-29). Without this, "CCTV for my apartment"
-      would match Real Estate and "CCTV for my restaurant" would match Food. A silent match would also
-      block the lower-priority SmartNest welcome. The "message contains" condition checks one phrase at
-      a time, which is why each service automation now has about 34 steps.
+    - Keywords were narrowed on 2026-10-31. Bare words such as restaurant, apartment, property,
+      corporate, product launch and engagement are gone, because CCTV and marketing customers use
+      them too. "CCTV for my apartment" and "real estate marketing" no longer reach Studio; "Need a
+      shoot for my restaurant" still gets the Studio enquiry. This also removed the CCTV steps added on
+      2026-10-29, so a service automation is back to about 10 steps.
+    - "Studio · Wedding Photography" is the exception: "wedding" and "marriage" stay single words, so
+      a message that also says "cctv" gets the SmartNest list and one that says "marketing" gets the
+      marketing list ("CCTV for my marriage hall").
   - **"Studio · Photography enquiry"** (Low): matches studio / photography / photographer /
     photoshoot / shoot / photos, including a tap on the menu's **Studio** button. "camera" was removed
-    on 2026-10-29, and it stays silent on CCTV words, so the SmartNest welcome answers those. It
-    routes by tag:
+    on 2026-10-29. It stays silent on CCTV and marketing words, so the SmartNest or Marketing welcome
+    (same tier) answers those. It routes by tag:
     - Studio Owner → owner reply;
     - Studio Customer → services list;
     - no studio tag → asks "Book a photoshoot" / "Website for studio".
@@ -876,18 +880,43 @@ deployment recreates these in the UI.
         "which areas do you serve" also gets this answer.
       - "SmartNest · Repair & upgrade": CCTV repair, camera not working, not recording, offline,
         upgrade CCTV.
+  - **Digital marketing, added 2026-10-31.** Wording and links come from
+    `https://www.svbtechlabs.com/services/digital-marketing`. Keywords come from the pre-filled
+    WhatsApp message on each page. Every marketing automation adds **New Marketing**.
+    - **"Marketing · Welcome"** (Low, whole words): digital marketing, marketing, advertising, ads,
+      campaign(s), promotion, promote, branding, leads, and the **More marketing info** button. This is
+      the site-wide button on every marketing page ("…your digital marketing — WhatsApp, RCS and
+      social campaigns. Could we discuss?"), so it is treated as a general enquiry and bare "RCS" is
+      not a keyword. It sends a short intro, the link and a **service list**: WhatsApp & RCS Marketing,
+      Meta Advertising, Google Marketing, YouTube Marketing, Local SEO & Google Maps, Social media
+      management, Lead generation, Video & content, Traditional & offline, Arrange a Call Back.
+    - **21 page replies, "Marketing · <page>"** (Normal, whole words). Each sends the page's one-line
+      summary, its link, the main link and "Our team will contact you shortly", with the buttons
+      **Arrange a Call Back** / **More marketing info**:
+      - Industries: Real Estate, Political Campaigns, Local Business, Product & E-commerce, Education,
+        Healthcare, B2B, Events.
+      - Channels: YouTube, Meta, Instagram, Facebook, Google (all tag **DM Ads**), WhatsApp & RCS
+        (**DM WhatsApp & RCS**), Traditional & Offline (**DM Offline**).
+      - Objectives: Lead Generation, Brand Awareness, Product Launch (**DM Ads**), Social Media
+        Management, Video & Content (**DM Social & Video**), Local SEO & Google Maps (**DM SEO**).
+      - Lead Generation stays silent when the message also names real estate or B2B. Instagram and
+        Facebook stay silent when both are named, so Meta Advertising replies.
+    - **"Marketing · Industries"** and **"Marketing · Results & cost"** (Normal): the website's FAQ
+      answers for typed questions. Results & cost says we don't promise fixed leads or a fixed cost per
+      lead; no prices are quoted, because the website lists none.
   - **Tooling:** the setup was generated and checked with scripts kept outside the repo:
-    - plan files for studio and SmartNest;
+    - plan files for studio, SmartNest and marketing;
     - simulators that replay sample messages and every button / row tap, under four tag states and
       against the stored live rows;
     - an apply script that backs up all automations first.
 
-    Last backups: `automations-backup-2026-10-24T17-52-13-175Z.json` (before the studio rebuild) and
-    `automations-backup-2026-10-29T17-27-47-530Z.json` (before SmartNest). To rebuild by hand,
-    follow the list above.
+    Last backups: `automations-backup-2026-10-24T17-52-13-175Z.json` (before the studio rebuild),
+    `automations-backup-2026-10-29T17-27-47-530Z.json` (before SmartNest) and
+    `automations-backup-2026-10-31T18-34-07-852Z.json` (before marketing). To rebuild by hand, follow
+    the list above.
   - **Not covered yet:** "Tag added" → "Assign conversation" routing for studio leads, and a Pocket
     CRM reply (it currently gets the greeting menu).
-- **Tags** — 18:
+- **Tags** — 26:
   - 15 department / stage tags (New / Follow-up / Done × Studio, AIoT, SVBTL, EduSMS, plus Our Team,
     Arrange a Call Back, Arrange a Live Demo);
   - **Studio Customer** (books photoshoots) and **Studio Owner** (wants a website for their studio),
@@ -895,6 +924,10 @@ deployment recreates these in the UI.
     Follow-up Studio aren't back-filled; they get the two-button question once.
   - **SmartNest** (CCTV / security enquiries, an AIoT sub-category), added 2026-10-29 and set with
     New AioT by the SmartNest automations.
+  - **New / Follow-up / Done Marketing** (a department, like Studio or AIoT) and the interest tags
+    **DM WhatsApp & RCS**, **DM Ads**, **DM SEO**, **DM Social & Video**, **DM Offline**, added
+    2026-10-31. The automations set New Marketing and the interest tag; Follow-up and Done are for
+    agents to move by hand.
 - **Message templates** — Utility templates approved by Meta (`inquiry_received`,
   `callback_scheduled`, `demo_confirmation`, `booking_confirmation`, `appointment_reminder`), Meta's
   sample `hello_world`, and the **Marketing** templates `studio_website_intro_v1` (en) /
