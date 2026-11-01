@@ -28,7 +28,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 
 - [At a glance](#at-a-glance)
 - [Who can do what](#who-can-do-what)
-- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–S
+- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–U
 - [2. Database migrations](#2-database-migrations)
 - [3. Public API changes (for the mobile app)](#3-public-api-changes-for-the-mobile-app)
 - [4. Deployment configuration](#4-deployment-configuration-not-in-git--recreate-per-deployment)
@@ -61,6 +61,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 | P | Media Library | Pick already-uploaded files instead of uploading again | 2026-10-24 | — | Low–Medium |
 | Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | pending | 904 | Medium–High |
 | T | Callback reminders | "Callbacks" on a customer and in the sidebar; alert when one falls due | pending | 906 | Low |
+| U | Error boundaries | A broken screen shows "Something went wrong" + Try again, not a blank page | pending | — | Low |
 
 ## Who can do what
 
@@ -790,6 +791,59 @@ prints a notice, reminders are recorded and listed correctly, and nothing ever f
 `SELECT * FROM cron.job WHERE jobname = 'notify-due-reminders';`.
 
 ---
+
+### U. Error boundaries
+**Branch:** `error-boundaries`
+**Files:** `src/components/layout/error-fallback.tsx` (new, shared fallback),
+`src/app/(dashboard)/error.tsx` (new), `src/app/error.tsx` (new),
+`messages/*.json` (`ErrorBoundary.*`).
+
+**What staff see**
+- When a screen breaks, the page area shows **"Something went wrong"**, one plain line of what to
+  do and a **Try again** button — instead of a blank white page. On a dashboard screen there is a
+  **Back to dashboard** link beside it; the root boundary hides that link, because every path it
+  covers makes it a dead end (a signed-out visitor is bounced back to `/login`, and if the shell
+  itself threw, `/dashboard` only remounts it).
+- On a dashboard screen the sidebar, header and nav stay where they are, so the failure costs them
+  one page, not the session. **Try again** re-renders the page; if it was a hiccup (a dropped
+  query, a realtime race) they carry on from where they were.
+- No error text and no stack: Meta-style gibberish means nothing to a telecaller and a message can
+  carry data. The error goes to the browser console instead, and the `digest` Next attaches to
+  *server* errors is shown as a short **Reference** they can read out on a support call.
+
+**How it works**
+- `src/app/(dashboard)/error.tsx` is a sibling of `(dashboard)/layout.tsx`, so React mounts it
+  *inside* `DashboardShell` — the chrome survives. `src/app/error.tsx` is the catch-all for
+  everything else (the auth pages, `/join`, and the shell itself if that is what throws); it sits
+  under the root layout, so the theme boot script and `NextIntlClientProvider` are both still in
+  place and its strings translate like any other.
+- Both are three lines around one shared `ErrorFallback`, so the two cannot drift apart — the same
+  reasoning as the callbacks panel in §T.
+- Logging is a `useEffect` keyed on `error`, not a render-time `console.error`, so re-rendering the
+  fallback does not re-log and render stays side-effect free. (React still double-invokes it in
+  dev, so expect two lines there and one in production.)
+
+**No `global-error.tsx`.** It replaces the root layout, which is where `NextIntlClientProvider` is
+mounted, so every string in it would have to be hard-coded English — against the four-language rule
+above — or it would have to bundle a 155 KB message catalogue into every page's JS. It would only
+ever fire if `src/app/layout.tsx` itself threw, which is a server component doing `getLocale()` /
+`getMessages()` and nothing else. Not worth either price; Next's built-in fallback covers that case.
+
+**Why:** the app is `"use client"` throughout — dashboard pages query Supabase and subscribe to
+realtime in their own hooks — and until now there was no `error.tsx` at any level. One unhandled
+throw anywhere in the tree (as in the contact-sidebar realtime clash fixed on 2026-11-01) unmounted
+the whole document and left agents staring at white, mid-conversation, with no way back but a
+reload. This is the floor under that.
+
+**Tests:** covered by the existing `messages.test.ts` parity checks (the new `ErrorBoundary.*` keys
+and their `{digest}` placeholder in all four languages). The boundary itself was verified by hand:
+against a page made to throw, the dashboard boundary renders the fallback and **Try again**
+recovers the page, the root boundary catches a throw outside the dashboard, and the error reaches
+the console. (The dashboard check ran with the shell's auth gate bypassed, so the chrome around it
+was not part of that run.)
+
+**Upstream-merge risk:** *Low.* Three new files and no edit to an upstream one. Upstream adding its
+own `error.tsx` would conflict on the path only.
 
 ---
 

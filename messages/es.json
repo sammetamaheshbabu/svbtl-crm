@@ -3158,5 +3158,12 @@
     "pageEmpty": "Nada que devolver. Programa una llamada desde el perfil de un cliente en la bandeja.",
     "openChat": "Abrir chat",
     "withContact": "con {contact}"
+  },
+  "ErrorBoundary": {
+    "title": "Algo salió mal",
+    "description": "Esta parte de la app dejó de responder. Vuelve a intentarlo; si sigue ocurriendo, avisa a tu administrador.",
+    "tryAgain": "Intentar de nuevo",
+    "backToDashboard": "Volver al panel",
+    "reference": "Referencia: {digest}"
   }
 }
