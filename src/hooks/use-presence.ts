@@ -41,6 +41,15 @@ interface UsePresenceResult {
  *
  * Account comes from useAuth; pass `enabled: false` to opt a consumer
  * out (e.g. while a parent sheet is closed).
+ *
+ * The topic is per-account, not per-caller. Today's two consumers — the
+ * chat thread and Settings → Members — sit on different routes and are
+ * never mounted together, so one channel is enough. A second consumer
+ * mounted *alongside* one of them would throw (`cannot add
+ * postgres_changes callbacks … after subscribe()`): lift the map into a
+ * provider the shell mounts once, rather than suffixing the topic per
+ * instance, since every consumer wants the same account-wide map.
+ * CUSTOMIZATIONS.md §V.
  */
 export function usePresence(enabled = true): UsePresenceResult {
   const { accountId } = useAuth();

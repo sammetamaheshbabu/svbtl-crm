@@ -28,7 +28,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 
 - [At a glance](#at-a-glance)
 - [Who can do what](#who-can-do-what)
-- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–U
+- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–V
 - [2. Database migrations](#2-database-migrations)
 - [3. Public API changes (for the mobile app)](#3-public-api-changes-for-the-mobile-app)
 - [4. Deployment configuration](#4-deployment-configuration-not-in-git--recreate-per-deployment)
@@ -62,6 +62,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 | Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | pending | 904 | Medium–High |
 | T | Callback reminders | "Callbacks" on a customer and in the sidebar; alert when one falls due | pending | 906 | Low |
 | U | Error boundaries and 404 | A broken screen shows "Something went wrong" + Try again; a bad URL gets a real page | pending | — | Low |
+| V | Realtime topic audit | — (no behaviour change; comments + this note) | pending | — | Low |
 
 ## Who can do what
 
@@ -854,6 +855,71 @@ was not part of that run.)
 
 **Upstream-merge risk:** *Low.* Three new files and no edit to an upstream one. Upstream adding its
 own `error.tsx` would conflict on the path only.
+
+---
+
+### V. Realtime channel topics: who may share one
+**Branch:** `realtime-channel-audit`
+**Files:** comment-only edits to `src/components/inbox/contact-sidebar.tsx`,
+`src/hooks/use-realtime.ts`, `src/hooks/use-presence.ts`, `src/hooks/use-total-unread.ts`,
+`src/hooks/use-unread-notifications.ts`, `src/hooks/use-due-reminders.ts`.
+**No behaviour change.**
+
+**Why this exists**
+
+§N's fix (`4aa56e2`) stopped the inbox crashing when a phone tapped the customer's name: below
+`xl` the chat header opens the contact sheet while the desktop panel copy of `ContactSidebar` is
+still mounted (hidden by CSS alone), so two components subscribed to `contact-tags:<id>` at once.
+That looked like it could be one instance of a general problem, so every `.channel()` topic in the
+fork was audited. **It was not** — nothing else in the app can hit it today. This section records
+the rule and the evidence so the next person does not have to re-derive either.
+
+**The rule**
+
+`supabase.channel(topic)` is *not* a constructor. `RealtimeClient.channel()` returns the
+**existing** channel object whenever one with that topic is still registered, and
+`RealtimeChannel.on()` throws `cannot add postgres_changes callbacks for … after subscribe()` when
+the channel it is handed is already `joining` or `joined`. So:
+
+> **Two components subscribed to one topic at the same time = a crash.** One at a time is fine.
+
+Only *concurrent* subscribers matter. `removeChannel()` is declared `async`, but the teardown it
+matters for is synchronous: `unsubscribe()` → phoenix `leave()` sets the state to `leaving`, which
+makes `canPush()` false, which acks the leave locally there and then — the channel reaches `closed`
+and is deregistered before `removeChannel()` has even awaited. Verified against the installed
+`@supabase/realtime-js@2.118.0`: after a synchronous `unsubscribe()`, asking for the same topic
+returns a **different** object, and subscribing on it reaches `joining`. So an unmount→remount —
+a route change, an effect re-running on a changed dependency, React StrictMode's dev double-invoke
+— was never the failure mode, and a per-instance suffix is not needed to survive one. (The §N
+comment claimed otherwise; corrected here.)
+
+**The audit**
+
+| Topic | Where | Verdict |
+|---|---|---|
+| `contact-tags:<id>:<instanceId>` | `inbox/contact-sidebar.tsx` | **Collided.** Fixed in §N — two `<ContactSidebar>` in `inbox/page.tsx` (the `xl:block` panel, line 733, and the `<Sheet>` copy, line 753) are mounted together below `xl`. The only one. |
+| `notifications-page` | `(dashboard)/notifications/page.tsx` | Safe. A route page component; one per route. |
+| `reactions:<conversationId>` | `inbox/message-thread.tsx` | Safe. One `<MessageThread>` in the tree (`inbox/page.tsx:706` — mobile and desktop share it, the wrapper `div` just hides it), and the topic carries the conversation anyway. |
+| `browser-notifications`, `reminder-browser-notifications` | `use-browser-notifications.ts` | Safe. Both hooks are called only by `<BrowserNotificationsListener>`, mounted once in `dashboard-shell.tsx:53`. Its doc comment already said "Mount ONCE". |
+| `total-unread-realtime`, `notifications-unread-count`, `due-reminders-count` | `use-total-unread.ts`, `use-unread-notifications.ts`, `use-due-reminders.ts` | Safe. All three are called from `<Sidebar>` (`sidebar.tsx:123–125`), mounted once in `dashboard-shell.tsx:54`. The sidebar renders a single `<aside>` that is responsive by CSS, not a mobile copy plus a desktop copy — the trap §N fell into. |
+| `presence:<accountId>` | `use-presence.ts` | Safe, narrowly. Two consumers — `message-thread.tsx:204` and `settings/members-tab.tsx:131` — but on different routes, and the App Router commits a navigation in one pass, so the old tree's cleanups run before the new tree's effects. Never both live. |
+| `inbox-realtime`, `dashboard-overview` | `use-realtime.ts` callers | Safe. Two distinct literals, one per page, neither page mounted twice. |
+
+**What changed**
+
+Nothing that runs. The topics that are safe are safe because of a caller-side invariant ("only one
+mounted caller") that nothing enforces and that five of them did not state — exactly the shape of
+assumption §N broke. Each now says so in its doc comment, pointing here.
+
+`usePresence` gets a different note on purpose. It is the one hook written to be shared (its
+`enabled` flag exists so "a consumer" can opt out), and its two callers want the *same*
+account-wide map. So if a third consumer ever needs to be live alongside one of them, the answer
+is to lift the map into a provider the shell mounts once — **not** a per-instance topic suffix,
+which would open N websocket channels for one account's presence. The suffix is right for
+`ContactSidebar`, where the two copies genuinely watch one contact each and the duplication is a
+responsive-layout artefact.
+
+**Upstream-merge risk:** *Low.* Comments only, inside blocks the fork already rewrote.
 
 ---
 

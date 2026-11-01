@@ -17,6 +17,9 @@ import type { Notification } from "@/types";
  * due, and that always writes a `reminder_due` notification, which IS
  * published. So we listen there and re-count. Writes from this tab
  * refresh through `refresh()` instead.
+ *
+ * Fixed topic, so ONE mounted caller at a time — as `useTotalUnread`.
+ * CUSTOMIZATIONS.md §V.
  */
 export function useDueReminders(): { count: number; refresh: () => void } {
   const [count, setCount] = useState(0);

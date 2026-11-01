@@ -12,6 +12,11 @@ interface RealtimeEvent<T> {
 }
 
 interface UseRealtimeOptions {
+  /**
+   * Realtime topic. Must be unique across everything mounted at once:
+   * two live subscribers to one topic share a channel object and the
+   * second throws from `.on()`. CUSTOMIZATIONS.md §V.
+   */
   channelName: string;
   onMessageEvent?: (event: RealtimeEvent<Message>) => void;
   onConversationEvent?: (event: RealtimeEvent<Conversation>) => void;
