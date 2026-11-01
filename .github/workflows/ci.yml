@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  # Manual trigger, so a run can be started from the Actions tab
+  # without pushing a commit.
+  workflow_dispatch:
   pull_request:
     branches: [main]
   push:
