@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useCan } from "@/hooks/use-can";
@@ -64,6 +64,9 @@ export function ContactSidebar({
   // Editing a contact needs the agent role, like sending (contacts RLS).
   const canEdit = useCan("send-messages");
   const [copied, setCopied] = useState(false);
+  /** Keeps this instance's realtime topic distinct from a second sidebar's. */
+  const instanceId = useId();
+
   const [deals, setDeals] = useState<Deal[]>([]);
   const [notes, setNotes] = useState<ContactNote[]>([]);
   const [tags, setTags] = useState<ContactTagRow[]>([]);
@@ -158,8 +161,16 @@ export function ContactSidebar({
     if (!contactId) return;
     const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | undefined;
+  // The topic carries this instance's id, not just the contact's. Below xl the
+  // chat header opens the sheet while the panel copy of this component is still
+  // mounted (hidden by CSS alone), so two sidebars watch the same contact at
+  // once. supabase.channel() hands back the *existing* channel for a repeated
+  // topic, and .on() on an already-subscribed channel throws — which crashed
+  // the inbox when a phone tapped the customer's name. A per-instance topic
+  // also survives the mount→unmount→remount of StrictMode, since
+  // removeChannel() only finishes unregistering the old topic asynchronously.
     const channel = supabase
-      .channel(`contact-tags:${contactId}`)
+      .channel(`contact-tags:${contactId}:${instanceId}`)
       .on(
         "postgres_changes",
         {
@@ -178,7 +189,7 @@ export function ContactSidebar({
       clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [contactId, fetchTags]);
+  }, [contactId, fetchTags, instanceId]);
 
   const startEditing = useCallback(() => {
     if (!contact) return;
