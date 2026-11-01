@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { LayoutDashboard, RotateCcw, TriangleAlert } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusScreen } from "@/components/layout/status-screen";
 
 // What an `error.tsx` boundary renders. Shared by the root boundary and
 // the dashboard one so the two cannot drift apart.
@@ -36,40 +37,30 @@ export function ErrorFallback({
   }, [error]);
 
   return (
-    <div className="flex min-h-64 flex-col items-center justify-center px-4 py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10">
-        <TriangleAlert className="h-6 w-6 text-destructive" aria-hidden />
-      </div>
-      <h1 className="mt-4 text-lg font-semibold text-foreground">
-        {t("title")}
-      </h1>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        {t("description")}
-      </p>
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-        <Button onClick={reset}>
-          <RotateCcw className="size-4" aria-hidden />
-          {t("tryAgain")}
-        </Button>
-        {/* Anchor styled with `buttonVariants` rather than a <Button>:
-            the wacrm Button is the Base UI primitive and has no
-            Radix-style asChild slot (same reasoning as the invite
-            dialog's share link). */}
-        {showDashboardLink && (
-          <Link
-            href="/dashboard"
-            className={buttonVariants({ variant: "outline" })}
-          >
-            <LayoutDashboard className="size-4" aria-hidden />
-            {t("backToDashboard")}
-          </Link>
-        )}
-      </div>
-      {error.digest && (
-        <p className="mt-4 text-[11px] text-muted-foreground/70">
-          {t("reference", { digest: error.digest })}
-        </p>
+    <StatusScreen
+      icon={TriangleAlert}
+      tone="destructive"
+      title={t("title")}
+      description={t("description")}
+      reference={error.digest ? t("reference", { digest: error.digest }) : undefined}
+    >
+      <Button onClick={reset}>
+        <RotateCcw className="size-4" aria-hidden />
+        {t("tryAgain")}
+      </Button>
+      {/* Anchor styled with `buttonVariants` rather than a <Button>:
+          the wacrm Button is the Base UI primitive and has no
+          Radix-style asChild slot (same reasoning as the invite
+          dialog's share link). */}
+      {showDashboardLink && (
+        <Link
+          href="/dashboard"
+          className={buttonVariants({ variant: "outline" })}
+        >
+          <LayoutDashboard className="size-4" aria-hidden />
+          {t("backToDashboard")}
+        </Link>
       )}
-    </div>
+    </StatusScreen>
   );
 }

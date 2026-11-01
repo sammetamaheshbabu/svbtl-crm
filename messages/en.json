@@ -3165,5 +3165,10 @@
     "tryAgain": "Try again",
     "backToDashboard": "Back to dashboard",
     "reference": "Reference: {digest}"
+  },
+  "NotFound": {
+    "title": "This page doesn't exist",
+    "description": "The address you opened isn't part of the CRM. It may have changed, or the link may have a typo.",
+    "backToDashboard": "Back to dashboard"
   }
 }

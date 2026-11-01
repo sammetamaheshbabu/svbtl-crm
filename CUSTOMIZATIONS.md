@@ -61,7 +61,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 | P | Media Library | Pick already-uploaded files instead of uploading again | 2026-10-24 | — | Low–Medium |
 | Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | pending | 904 | Medium–High |
 | T | Callback reminders | "Callbacks" on a customer and in the sidebar; alert when one falls due | pending | 906 | Low |
-| U | Error boundaries | A broken screen shows "Something went wrong" + Try again, not a blank page | pending | — | Low |
+| U | Error boundaries and 404 | A broken screen shows "Something went wrong" + Try again; a bad URL gets a real page | pending | — | Low |
 
 ## Who can do what
 
@@ -792,11 +792,12 @@ prints a notice, reminders are recorded and listed correctly, and nothing ever f
 
 ---
 
-### U. Error boundaries
+### U. Error boundaries and the 404 page
 **Branch:** `error-boundaries`
-**Files:** `src/components/layout/error-fallback.tsx` (new, shared fallback),
-`src/app/(dashboard)/error.tsx` (new), `src/app/error.tsx` (new),
-`messages/*.json` (`ErrorBoundary.*`).
+**Files:** `src/components/layout/status-screen.tsx` (new, the shared block),
+`src/components/layout/error-fallback.tsx` (new), `src/app/(dashboard)/error.tsx` (new),
+`src/app/error.tsx` (new), `src/app/not-found.tsx` (new),
+`messages/*.json` (`ErrorBoundary.*`, `NotFound.*`).
 
 **What staff see**
 - When a screen breaks, the page area shows **"Something went wrong"**, one plain line of what to
@@ -810,6 +811,9 @@ prints a notice, reminders are recorded and listed correctly, and nothing ever f
 - No error text and no stack: Meta-style gibberish means nothing to a telecaller and a message can
   carry data. The error goes to the browser console instead, and the `digest` Next attaches to
   *server* errors is shown as a short **Reference** they can read out on a support call.
+- A URL that matches no route gets the same treatment in a calmer key — a compass rather than a
+  warning triangle, and **Back to dashboard** without a **Try again** — instead of Next's bare
+  built-in 404, which is untranslated and offers no way back.
 
 **How it works**
 - `src/app/(dashboard)/error.tsx` is a sibling of `(dashboard)/layout.tsx`, so React mounts it
@@ -818,7 +822,13 @@ prints a notice, reminders are recorded and listed correctly, and nothing ever f
   under the root layout, so the theme boot script and `NextIntlClientProvider` are both still in
   place and its strings translate like any other.
 - Both are three lines around one shared `ErrorFallback`, so the two cannot drift apart — the same
-  reasoning as the callbacks panel in §T.
+  reasoning as the callbacks panel in §T. `ErrorFallback` and `not-found.tsx` in turn share
+  `StatusScreen`, which owns the centred icon / title / description / actions block; `tone` is the
+  only thing that differs, because a mistyped URL is not an error and shouldn't shout like one.
+- `src/app/not-found.tsx` covers every unmatched URL. It keeps **Back to dashboard** — unlike the
+  root error boundary — because the app is working and the address simply isn't part of it, so the
+  link is a real way out rather than a loop. A signed-out visitor is forwarded to `/login` from
+  there by middleware, which is the right answer too.
 - Logging is a `useEffect` keyed on `error`, not a render-time `console.error`, so re-rendering the
   fallback does not re-log and render stays side-effect free. (React still double-invokes it in
   dev, so expect two lines there and one in production.)

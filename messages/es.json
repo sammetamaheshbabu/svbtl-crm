@@ -3165,5 +3165,10 @@
     "tryAgain": "Intentar de nuevo",
     "backToDashboard": "Volver al panel",
     "reference": "Referencia: {digest}"
+  },
+  "NotFound": {
+    "title": "Esta página no existe",
+    "description": "La dirección que abriste no es parte de la app. Puede que haya cambiado o que el enlace tenga un error.",
+    "backToDashboard": "Volver al panel"
   }
 }
