@@ -41,7 +41,9 @@
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
     "menuSettings": "설정",
-    "menuSignOut": "로그아웃"
+    "menuSignOut": "로그아웃",
+    "callbacks": "콜백",
+    "dueCallbacks": "예정된 콜백 {count}건"
   },
   "Header": {
     "dashboard": "대시보드",
@@ -2669,6 +2671,22 @@
       "noContactForConversation": "대화를 확인할 수 없습니다: 연락처 없음",
       "noConversation": "전송할 수 없습니다: 연락처에 기존 대화가 없습니다",
       "tagAddedNoConversation": "tag_added 자동화가 전송할 수 없습니다: 연락처에 기존 대화가 없습니다"
+    },
+    "reminders": {
+      "invalidRemindAt": "콜백 시각이 올바른 날짜가 아닙니다",
+      "remindAtInPast": "미래 시각을 선택하세요",
+      "invalidContactId": "연락처 ID는 UUID여야 합니다",
+      "invalidReminderId": "콜백 ID는 UUID여야 합니다",
+      "invalidTimeZone": "알 수 없는 시간대입니다",
+      "reasonRequired": "콜백 사유를 입력하세요",
+      "reasonTooLong": "사유는 {max}자 이내로 입력하세요",
+      "verifyFailed": "연락처를 확인하지 못했습니다",
+      "contactNotFound": "연락처를 찾을 수 없습니다",
+      "reminderNotFound": "콜백을 찾을 수 없습니다",
+      "nothingToUpdate": "업데이트할 내용이 없습니다",
+      "createFailed": "콜백을 저장하지 못했습니다: {message}",
+      "updateFailed": "콜백을 업데이트하지 못했습니다: {message}",
+      "deleteFailed": "콜백을 삭제하지 못했습니다: {message}"
     }
   },
   "Validation": {
@@ -3024,6 +3042,12 @@
     "handover": {
       "title": "채팅 이관 요청",
       "body": "{requester}님이 {contact} 채팅을 넘겨 달라고 요청했습니다."
+    },
+    "reminders": {
+      "fieldsRequired": "reason, remind_at, remind_at_tz 가 필요합니다",
+      "invalidStatus": "status 는 done 또는 cancelled 여야 합니다",
+      "notificationTitle": "{contact} 님에게 다시 전화하기",
+      "unknownContact": "이 고객"
     }
   },
   "MediaLibrary": {
@@ -3103,5 +3127,36 @@
       "what": "WhatsApp이 이 메시지를 보내는 중 일시적인 문제가 있었습니다.",
       "fix": "몇 분 뒤 다시 보내세요."
     }
+  },
+  "Callbacks": {
+    "heading": "콜백",
+    "none": "콜백 없음",
+    "add": "콜백 추가",
+    "reasonLabel": "어떤 용건인가요?",
+    "reasonPlaceholder": "웨딩 패키지 가격을 원함",
+    "whenLabel": "언제",
+    "orExact": "또는 날짜와 시각 선택",
+    "save": "추가",
+    "cancel": "취소",
+    "saved": "콜백이 설정되었습니다",
+    "saveFailed": "콜백을 설정하지 못했습니다",
+    "done": "완료",
+    "doneSaved": "콜백을 완료로 표시했습니다",
+    "doneFailed": "완료로 표시하지 못했습니다",
+    "overdue": "기한 지남",
+    "dueAt": "{time} 예정",
+    "loadFailed": "콜백을 불러오지 못했습니다",
+    "presetThisEvening": "오늘 저녁 5시 30분",
+    "presetTomorrowMorning": "내일 오전 10시",
+    "presetInThreeDays": "3일 후",
+    "presetNextWeek": "다음 주",
+    "pageTitle": "콜백",
+    "pageSubtitle": "다시 전화하기로 약속한 고객",
+    "groupOverdue": "기한 지남",
+    "groupToday": "오늘",
+    "groupUpcoming": "예정",
+    "pageEmpty": "대기 중인 콜백이 없습니다. 받은편지함의 고객 프로필에서 콜백을 설정하세요.",
+    "openChat": "채팅 열기",
+    "withContact": "{contact} 님"
   }
 }

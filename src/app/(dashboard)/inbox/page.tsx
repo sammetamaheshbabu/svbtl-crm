@@ -36,6 +36,11 @@ import {
 // across reloads and sessions (device-scoped, like the theme prefs).
 const CONTACT_PANEL_STORAGE_KEY = "wacrm:inbox:contact-panel-open";
 
+// The width at which the contact panel fits beside the thread, matching the
+// `xl:` prefix on its wrapper. Below it the details open as a sheet instead.
+// Kept in one place so the mount test and the header's tap can't disagree.
+const CONTACT_PANEL_MEDIA_QUERY = "(min-width: 80rem)";
+
 // `useSearchParams` (the `?c=<id>` deep link below) requires a Suspense
 // boundary or the production build bails to CSR and errors out. Thin
 // wrapper supplies it; the inner component holds all the inbox state.
@@ -97,10 +102,26 @@ function InboxPageInner() {
     }
   }, []);
 
+  /**
+   * Whether the viewport is wide enough for the docked panel. The panel's
+   * `hidden xl:block` only hides it — below xl it still mounted, fetching
+   * deals / notes / tags / custom fields and opening a realtime subscription
+   * on every phone, behind a sheet showing the very same thing. Starts `true`
+   * to match the server render, then reconciles on mount like the flag above.
+   */
+  const [panelFits, setPanelFits] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia(CONTACT_PANEL_MEDIA_QUERY);
+    const sync = () => setPanelFits(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
   // The customer's name in the chat header: on desktop it opens the
   // panel if it's hidden; below xl it opens the contact sheet.
   const handleOpenContact = useCallback(() => {
-    if (window.matchMedia("(min-width: 80rem)").matches) {
+    if (window.matchMedia(CONTACT_PANEL_MEDIA_QUERY).matches) {
       if (contactPanelOpen) return;
       setContactPanelOpen(true);
       try {
@@ -705,11 +726,15 @@ function InboxPageInner() {
             agent hasn't collapsed it via the thread-header toggle (#258).
             Below xl it's hidden (the `xl:block` below) and opens as a sheet; the
             toggle — which is itself desktop-only — never affects it. */}
-        {contactPanelOpen && (
+        {contactPanelOpen && panelFits && (
           // xl, not lg: between 1024 and 1279px the panel squeezed the chat
           // to ~190px, so there it opens as a sheet instead.
           <div className="hidden xl:block">
-            <ContactSidebar contact={activeContact} onContactUpdated={handleContactUpdated} />
+            <ContactSidebar
+              contact={activeContact}
+              onContactUpdated={handleContactUpdated}
+              conversationId={activeConversation?.id ?? null}
+            />
           </div>
         )}
       </div>
@@ -729,6 +754,7 @@ function InboxPageInner() {
               contact={activeContact}
               onContactUpdated={handleContactUpdated}
               variant="sheet"
+              conversationId={activeConversation?.id ?? null}
             />
           </div>
         </SheetContent>

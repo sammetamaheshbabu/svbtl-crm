@@ -163,6 +163,25 @@ BEGIN
     RAISE EXCEPTION 'anon can execute dashboard_overview — migration 059 grants are wrong';
   END IF;
 
+  -- SVBTL fork, 906: callback reminders. The table and the job that
+  -- fires them are load-bearing — without the function a reminder is
+  -- recorded and then silently never goes off.
+  IF to_regclass('public.contact_reminders') IS NULL THEN
+    RAISE EXCEPTION 'contact_reminders is missing - migration 906 did not apply';
+  END IF;
+  IF to_regprocedure('public.notify_due_reminders()') IS NULL THEN
+    RAISE EXCEPTION 'public.notify_due_reminders() is missing - migration 906 did not apply';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE schemaname = 'public' AND indexname = 'idx_contact_reminders_due'
+  ) THEN
+    RAISE EXCEPTION 'idx_contact_reminders_due is missing - migration 906 did not apply';
+  END IF;
+  IF has_function_privilege('anon', 'public.notify_due_reminders()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'anon can execute notify_due_reminders - migration 906 grants are wrong';
+  END IF;
+
   RAISE NOTICE 'schema verification passed';
 END
 $$;

@@ -41,7 +41,9 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Perfil",
     "menuSettings": "Configurações",
-    "menuSignOut": "Sair"
+    "menuSignOut": "Sair",
+    "callbacks": "Retornos",
+    "dueCallbacks": "{count} retornos pendentes"
   },
   "Header": {
     "dashboard": "Painel",
@@ -2669,6 +2671,22 @@
       "noContactForConversation": "não foi possível identificar a conversa: sem contato",
       "noConversation": "não é possível enviar: o contato não tem uma conversa existente",
       "tagAddedNoConversation": "a automação tag_added não pode enviar: o contato não tem uma conversa existente"
+    },
+    "reminders": {
+      "invalidRemindAt": "O horário do retorno não é uma data válida",
+      "remindAtInPast": "Escolha um horário no futuro",
+      "invalidContactId": "O id do contato precisa ser um UUID",
+      "invalidReminderId": "O id do retorno precisa ser um UUID",
+      "invalidTimeZone": "Fuso horário desconhecido",
+      "reasonRequired": "Diga sobre o que é o retorno",
+      "reasonTooLong": "Mantenha o motivo com menos de {max} caracteres",
+      "verifyFailed": "Não foi possível verificar o contato",
+      "contactNotFound": "Contato não encontrado",
+      "reminderNotFound": "Retorno não encontrado",
+      "nothingToUpdate": "Nada para atualizar",
+      "createFailed": "Não foi possível salvar o retorno: {message}",
+      "updateFailed": "Não foi possível atualizar o retorno: {message}",
+      "deleteFailed": "Não foi possível excluir o retorno: {message}"
     }
   },
   "Validation": {
@@ -3024,6 +3042,12 @@
     "handover": {
       "title": "Pedido de transferência",
       "body": "{requester} pede para você transferir a conversa com {contact}."
+    },
+    "reminders": {
+      "fieldsRequired": "reason, remind_at e remind_at_tz são obrigatórios",
+      "invalidStatus": "status precisa ser done ou cancelled",
+      "notificationTitle": "Retornar a ligação para {contact}",
+      "unknownContact": "este cliente"
     }
   },
   "MediaLibrary": {
@@ -3103,5 +3127,36 @@
       "what": "O WhatsApp teve um problema temporário ao enviar esta mensagem.",
       "fix": "Tente enviar de novo em alguns minutos."
     }
+  },
+  "Callbacks": {
+    "heading": "Retornos",
+    "none": "Nenhum retorno",
+    "add": "Adicionar retorno",
+    "reasonLabel": "Sobre o que é?",
+    "reasonPlaceholder": "Quer o preço do pacote de casamento",
+    "whenLabel": "Quando",
+    "orExact": "Ou escolha uma data e um horário",
+    "save": "Adicionar",
+    "cancel": "Cancelar",
+    "saved": "Retorno agendado",
+    "saveFailed": "Não foi possível agendar o retorno",
+    "done": "Concluído",
+    "doneSaved": "Retorno marcado como concluído",
+    "doneFailed": "Não foi possível marcar como concluído",
+    "overdue": "Atrasado",
+    "dueAt": "Para {time}",
+    "loadFailed": "Não foi possível carregar os retornos",
+    "presetThisEvening": "Hoje à tarde, 17:30",
+    "presetTomorrowMorning": "Amanhã, 10:00",
+    "presetInThreeDays": "Em 3 dias",
+    "presetNextWeek": "Na próxima semana",
+    "pageTitle": "Retornos",
+    "pageSubtitle": "Clientes para quem você prometeu retornar",
+    "groupOverdue": "Atrasados",
+    "groupToday": "Hoje",
+    "groupUpcoming": "Próximos",
+    "pageEmpty": "Nada para retornar. Agende um retorno pelo perfil do cliente na caixa de entrada.",
+    "openChat": "Abrir conversa",
+    "withContact": "com {contact}"
   }
 }

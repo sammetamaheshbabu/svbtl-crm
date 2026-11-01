@@ -60,6 +60,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 | O | Quick replies: image + fill-ins | Image header on button messages; `{{1}}`… asked when picking | 2026-10-24 | — | Medium |
 | P | Media Library | Pick already-uploaded files instead of uploading again | 2026-10-24 | — | Low–Medium |
 | Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | pending | 904 | Medium–High |
+| T | Callback reminders | "Callbacks" on a customer and in the sidebar; alert when one falls due | pending | 906 | Low |
 
 ## Who can do what
 
@@ -82,6 +83,8 @@ Roles are upstream's (`owner`, `admin`, `agent`, `viewer`). What our customizati
 | Pick from / upload to the Media Library (P) | Yes | Yes | No |
 | Admin-only settings (C) | Yes | Hidden | Hidden |
 | Dashboard queue & failed-message lists (M) | All chats | Own + unassigned | Own + unassigned |
+| See callback reminders (T) | Everyone's | Only their own | Only their own (read-only) |
+| Set / reschedule / close a callback (T) | Yes, anyone's | Yes, their own | No |
 
 ---
 
@@ -715,6 +718,79 @@ whether to resend.
 **Tests:** `delivery-error-help.test.ts` (mapping, and text present in all four languages).
 **Upstream-merge risk:** *Low.* Two small additions to upstream components.
 
+### T. Callback reminders
+**Branch:** `callback-reminders`
+**Migration:** `supabase/migrations/906_contact_reminders.sql`
+**Files:** `src/components/contacts/contact-callbacks.tsx` (new, shared panel),
+`src/app/(dashboard)/follow-ups/page.tsx` (new), `src/hooks/use-due-reminders.ts` (new),
+`src/lib/contacts/reminder-write.ts` / `reminder-api.ts` / `reminder-presets.ts` (new),
+`src/lib/time/zoned.ts` (new), `src/app/api/contacts/[id]/reminders/route.ts` and
+`src/app/api/reminders/[id]/route.ts` (new), plus edits to
+`src/components/inbox/contact-sidebar.tsx`, `src/components/contacts/contact-detail-view.tsx`,
+`src/components/layout/sidebar.tsx`, `src/app/(dashboard)/inbox/page.tsx`,
+`src/app/(dashboard)/notifications/page.tsx`, `src/hooks/use-browser-notifications.ts`,
+`src/components/notifications/browser-notifications-listener.tsx`, `src/middleware.ts`,
+`src/types/index.ts`, `messages/*.json` (`Callbacks.*`).
+
+**What staff see**
+- A **Callbacks** section on the customer, in both places a profile appears: the chat-side panel
+  and the Contacts detail sheet. One shared component, so the two cannot drift apart.
+- Adding one takes a reason and a time. The time is one tap for the usual answers — *This evening,
+  5:30 pm* / *Tomorrow, 10 am* / *In 3 days* / *Next week* — or an exact date and time. "This
+  evening" disappears once 5:30 pm has gone by rather than offering a time in the past.
+- A **Callbacks** page in the sidebar listing everything they owe, grouped **Overdue / Today /
+  Upcoming**, with a count badge on the nav entry. Each row opens the chat or closes the callback.
+- When one falls due: a notification in the bell, and a desktop pop-up if they have browser
+  notifications on.
+
+**How it works**
+- *Database:* `contact_reminders` holds the contact, the agent who set it, the reason, the instant,
+  and the IANA zone it was chosen in. RLS is the fork's usual shape — admins see everything, an
+  agent sees only their own. Reminders are deliberately **not** assignable: `agent_id =
+  auth.uid()` on insert, because the person who gave their word is the person who owns it.
+- *Firing:* `notify_due_reminders()` claims and notifies in a single statement — the
+  `UPDATE … RETURNING` moves a row out of `pending` as it inserts the notification, so two
+  overlapping runs cannot both pick it up (the same compare-and-set `claimPendingExecution()`
+  uses). It is `SECURITY DEFINER` because migration 027 grants clients `UPDATE (read_at)` on
+  `notifications` and nothing else. `pg_cron` runs it every five minutes.
+- *Time:* the row stores the absolute instant **and** the zone. `src/lib/time/zoned.ts` converts a
+  wall-clock intent to an instant with the same two-pass offset correction `ai/usage-days.ts`
+  already uses, so "5:30" means 5:30 on the agent's clock even if their machine is set to UTC.
+- *Notification text:* composed and stored on the row at creation, via `getT('Api')`. The cron job
+  has no request and therefore no locale; a title concatenated in SQL could never be translated.
+
+**Side effects:**
+- `notifications.type` gains `reminder_due`, so 906 rewrites the whole `notifications_type_check`
+  constraint. **904 must be applied first** or its two values are lost.
+- `contact_reminders` is deliberately **not** on the realtime publication. The one moment the badge
+  changes by itself is when a reminder falls due, and that always writes a `notifications` row,
+  which is published — so `use-due-reminders` listens there instead.
+- `src/middleware.ts` gains `/follow-ups`; without it the page would be reachable signed out.
+
+**Why:** telecallers ring studio owners all day and the call ends on a promise — "call me back by
+5:30", "after three days". The only way to record that was moving a **Follow-up** tag by hand (see
+§5), which carries no time and tells nobody, so the promise lived in someone's head and the
+customer went quiet. This replaces that workflow.
+
+**Tests:** `reminder-presets.test.ts` (each preset's wall-clock result in `Asia/Kolkata` and a
+second zone, month rollover, past times never offered), `reminder-write.test.ts` (past, empty,
+over-long, bad zone and cross-account writes all refused; rescheduling re-queues a fired reminder),
+`contact-reminders-migration.test.ts` (RLS shape, the drain index, the claim statement, the
+`anon` revoke, and that 906 is the last migration to define the notification whitelist).
+`redeem-invitation-migration.test.ts` gains `contact_reminders` to its exempt list — every
+reminder hangs off a contact by a NOT NULL key and contacts are already checked, the same
+reasoning `conversation_assignments` carries.
+
+**Upstream-merge risk:** *Low.* One new table and four new files; the edits to upstream components
+are a rendered section, a nav row, an icon-map entry and a second realtime listener.
+
+**Applying the migration:** run **904 first**, then 906, in the SQL editor. Enable `pg_cron`
+(Database → Extensions) and re-run 906 — the schedule is guarded, so until the extension exists it
+prints a notice, reminders are recorded and listed correctly, and nothing ever fires. Confirm with
+`SELECT * FROM cron.job WHERE jobname = 'notify-due-reminders';`.
+
+---
+
 ---
 
 ## 2. Database migrations
@@ -731,6 +807,8 @@ editor of project `yiheffhkyinnwhqahhdl`; there is no automatic migration on dep
 | `902_contact_whatsapp_opt_in.sql` | J | `contacts.whatsapp_opt_in_at`, `whatsapp_opt_in_by` | 2026-10-24 (as 049) |
 | `903_dashboard_agent_scope.sql` | M | Agent-scoped lists in `dashboard_overview` | 2026-10-24 |
 | `904_agent_restrictions.sql` | Q | Admin-only writes for broadcasts / automations / flows, contact delete, deal delete; scoped contacts; `handover_requested` notifications | not yet |
+| `905_inbound_unsupported_reason.sql` | S | Widens the `messages.error_*` column comments to cover inbound `type: unsupported` | not yet |
+| `906_contact_reminders.sql` | T | `contact_reminders` table + RLS, `reminder_due` notifications, `notify_due_reminders()` and its pg_cron schedule | not yet |
 
 900–902 were applied under their old numbers; **don't run them again** on this database (they are
 idempotent, but there's no need). On a fresh database run all upstream migrations in order, then
@@ -1017,6 +1095,8 @@ npx -y node@22 node_modules/next/dist/bin/next build
 - [ ] ✎ saves a profile; + / × add and remove a tag; phone: tap the name opens the sheet (N)
 - [ ] a `{{n}}` quick reply asks for the values; the image shows in the preview (O)
 - [ ] Library lists both tabs; picking then discarding a file leaves it in storage (P)
+- [ ] set a callback a few minutes out; it shows on the customer and under **Today** (T)
+- [ ] when it falls due: bell badge, notification with the reason, desktop pop-up; marking it done clears it (T)
 
 If a customization has since landed upstream, drop ours to reduce drift.
 
@@ -1038,3 +1118,4 @@ If a customization has since landed upstream, drop ours to reduce drift.
 | 2026-10-24 | `01dcc93` (`4d32b0c`) | Keyword priority, "Contact has any tag" condition (R); studio automations rebuilt (section 5) |
 | 2026-10-24 | `067ecdf` (`47ebd2d`) | Automation-added tags show live in the chat panel (N) |
 | 2026-10-25 | `delivery-error-help` | Plain-language help for failed messages (S) |
+| 2026-11-01 | `callback-reminders` | Callback reminders on a customer, Callbacks page, alert when due (T) |

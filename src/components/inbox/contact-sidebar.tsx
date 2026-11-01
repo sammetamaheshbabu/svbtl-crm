@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useCan } from "@/hooks/use-can";
@@ -32,6 +32,7 @@ import {
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { ContactCallbacks } from "@/components/contacts/contact-callbacks";
 import { contactHandle } from "@/lib/whatsapp/wa-identity";
 import { addContactTag, deleteContactTag } from "@/lib/contacts/tag-api";
 import { saveContactProfile, ProfileError } from "@/lib/contacts/save-profile";
@@ -42,6 +43,8 @@ interface ContactSidebarProps {
   onContactUpdated?: (contact: Contact) => void;
   /** "panel": the desktop right-hand column. "sheet": inside the phone sheet. */
   variant?: "panel" | "sheet";
+  /** The open chat, so a callback's notification can link back to it. */
+  conversationId?: string | null;
 }
 
 type ContactTagRow = Tag & { contact_tag_id: string };
@@ -56,9 +59,13 @@ export function ContactSidebar({
   contact,
   onContactUpdated,
   variant = "panel",
+  conversationId,
 }: ContactSidebarProps) {
   const tSidebar = useTranslations("Inbox.sidebar");
   const tThread = useTranslations("Inbox.messageThread");
+
+  /** Keeps this instance's realtime topic distinct from a second sidebar's. */
+  const instanceId = useId();
 
   const { accountId } = useAuth();
   // Editing a contact needs the agent role, like sending (contacts RLS).
@@ -154,12 +161,20 @@ export function ContactSidebar({
   // tagging, which updates the conversation row — so re-read the tags
   // whenever this contact's conversation changes. Debounced: one send
   // can touch the row more than once.
+  // The topic carries this instance's id, not just the contact's. Below xl the
+  // chat header opens the sheet while the panel copy of this component is still
+  // mounted (hidden by CSS alone), so two sidebars watch the same contact at
+  // once. supabase.channel() hands back the *existing* channel for a repeated
+  // topic, and .on() on an already-subscribed channel throws — which crashed
+  // the inbox when a phone tapped the customer's name. A per-instance topic
+  // also survives the mount→unmount→remount of StrictMode, since
+  // removeChannel() only finishes unregistering the old topic asynchronously.
   useEffect(() => {
     if (!contactId) return;
     const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const channel = supabase
-      .channel(`contact-tags:${contactId}`)
+      .channel(`contact-tags:${contactId}:${instanceId}`)
       .on(
         "postgres_changes",
         {
@@ -178,7 +193,7 @@ export function ContactSidebar({
       clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [contactId, fetchTags]);
+  }, [contactId, fetchTags, instanceId]);
 
   const startEditing = useCallback(() => {
     if (!contact) return;
@@ -548,6 +563,16 @@ export function ContactSidebar({
               )}
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="my-4 border-t border-border" />
+
+          {/* Callbacks — what we promised to ring back about, and when */}
+          <ContactCallbacks
+            contactId={contact.id}
+            conversationId={conversationId}
+            canEdit={canEdit}
+          />
 
           {/* Divider */}
           <div className="my-4 border-t border-border" />
