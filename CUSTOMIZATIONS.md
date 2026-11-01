@@ -14,8 +14,8 @@ records **every change we made on top of upstream, how it works and why**, so th
 | Live site | `https://crm.svbtechlabs.com` — every push to `main` deploys on Vercel |
 | Supabase project | `yiheffhkyinnwhqahhdl` (production) |
 | Upstream merged up to | `34bce1a` (synced 2026-10-24; original fork point `27c6bdf`) |
-| Our divergence | 20 commits, 72 files (32 new, 40 changed) + this document |
-| Last reviewed | 2026-10-24, at `main` = `1c01455` |
+| Our divergence | 59 commits, 147 files (64 new, 83 changed) + this document |
+| Last reviewed | 2026-11-02, at `main` = `27f35d8` |
 
 > **Scope.** This file documents **code** changes (tracked in git), the **database migrations**
 > we run by hand, the **deployment configuration** and the **account data** we rely on. It
@@ -59,10 +59,12 @@ records **every change we made on top of upstream, how it works and why**, so th
 | N | Edit contact from chat | Edit name/email/company/custom fields, add/remove tags in the chat | 2026-10-24 | — | Medium |
 | O | Quick replies: image + fill-ins | Image header on button messages; `{{1}}`… asked when picking | 2026-10-24 | — | Medium |
 | P | Media Library | Pick already-uploaded files instead of uploading again | 2026-10-24 | — | Low–Medium |
-| Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | pending | 904 | Medium–High |
-| T | Callback reminders | "Callbacks" on a customer and in the sidebar; alert when one falls due | pending | 906 | Low |
-| U | Error boundaries and 404 | A broken screen shows "Something went wrong" + Try again; a bad URL gets a real page | pending | — | Low |
-| V | Realtime topic audit | — (no behaviour change; comments + this note) | pending | — | Low |
+| Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | 2026-11-01 | 904 | Medium–High |
+| R | Automation priority and "any tag" | Keyword automations fire in a set order; "Contact has any tag" condition | 2026-10-24 | — | Medium |
+| S | Help for failed messages | "Not delivered" explains what happened and what to do, with Meta's code | 2026-10-25 | 905 | Low |
+| T | Callback reminders | "Callbacks" on a customer and in the sidebar; alert when one falls due | 2026-11-01 | 906 | Low |
+| U | Error boundaries and 404 | A broken screen shows "Something went wrong" + Try again; a bad URL gets a real page | 2026-11-01 | — | Low |
+| V | Realtime topic audit | — (no behaviour change; comments + this note) | 2026-11-01 | — | Low |
 
 ## Who can do what
 
@@ -936,9 +938,9 @@ editor of project `yiheffhkyinnwhqahhdl`; there is no automatic migration on dep
 | `901_conversation_assignments.sql` | I | `conversation_assignments` table, trigger, `assign_conversation()` | 2026-10-19 (as 048) |
 | `902_contact_whatsapp_opt_in.sql` | J | `contacts.whatsapp_opt_in_at`, `whatsapp_opt_in_by` | 2026-10-24 (as 049) |
 | `903_dashboard_agent_scope.sql` | M | Agent-scoped lists in `dashboard_overview` | 2026-10-24 |
-| `904_agent_restrictions.sql` | Q | Admin-only writes for broadcasts / automations / flows, contact delete, deal delete; scoped contacts; `handover_requested` notifications | not yet |
-| `905_inbound_unsupported_reason.sql` | S | Widens the `messages.error_*` column comments to cover inbound `type: unsupported` | not yet |
-| `906_contact_reminders.sql` | T | `contact_reminders` table + RLS, `reminder_due` notifications, `notify_due_reminders()` and its pg_cron schedule | not yet |
+| `904_agent_restrictions.sql` | Q | Admin-only writes for broadcasts / automations / flows, contact delete, deal delete; scoped contacts; `handover_requested` notifications | 2026-11-01 |
+| `905_inbound_unsupported_reason.sql` | S | Widens the `messages.error_*` column comments to cover inbound `type: unsupported` | 2026-11-02 |
+| `906_contact_reminders.sql` | T | `contact_reminders` table + RLS, `reminder_due` notifications, `notify_due_reminders()` and its pg_cron schedule | 2026-11-01 (re-run after enabling pg_cron) |
 
 900–902 were applied under their old numbers; **don't run them again** on this database (they are
 idempotent, but there's no need). On a fresh database run all upstream migrations in order, then
