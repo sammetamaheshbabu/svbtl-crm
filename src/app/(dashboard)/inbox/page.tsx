@@ -730,7 +730,11 @@ function InboxPageInner() {
           // xl, not lg: between 1024 and 1279px the panel squeezed the chat
           // to ~190px, so there it opens as a sheet instead.
           <div className="hidden xl:block">
-            <ContactSidebar contact={activeContact} onContactUpdated={handleContactUpdated} />
+            <ContactSidebar
+              contact={activeContact}
+              onContactUpdated={handleContactUpdated}
+              conversationId={activeConversation?.id ?? null}
+            />
           </div>
         )}
       </div>
@@ -750,6 +754,7 @@ function InboxPageInner() {
               contact={activeContact}
               onContactUpdated={handleContactUpdated}
               variant="sheet"
+              conversationId={activeConversation?.id ?? null}
             />
           </div>
         </SheetContent>

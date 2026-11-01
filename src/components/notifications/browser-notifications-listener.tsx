@@ -1,13 +1,20 @@
 "use client";
 
-import { useBrowserNotifications } from "@/hooks/use-browser-notifications";
+import {
+  useBrowserNotifications,
+  useReminderBrowserNotifications,
+} from "@/hooks/use-browser-notifications";
 
 /**
  * Headless. Mount ONCE per signed-in dashboard tab (the dashboard
- * shell, below the auth gate) so desktop notifications for new customer
- * messages fire on every dashboard page, not just the inbox.
+ * shell, below the auth gate) so desktop notifications fire on every
+ * dashboard page, not just the inbox.
+ *
+ * Two listeners, two sources: new customer messages, and callback
+ * reminders that have come due.
  */
 export function BrowserNotificationsListener() {
   useBrowserNotifications();
+  useReminderBrowserNotifications();
   return null;
 }

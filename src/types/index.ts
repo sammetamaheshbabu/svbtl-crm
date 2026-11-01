@@ -202,7 +202,11 @@ export interface Conversation {
 // ============================================================
 
 // 'handover_requested': SVBTL fork, New chat → "Ask … to hand it over".
-export type NotificationType = 'conversation_assigned' | 'handover_requested';
+// 'reminder_due': SVBTL fork, a callback reminder has come due (906).
+export type NotificationType =
+  | 'conversation_assigned'
+  | 'handover_requested'
+  | 'reminder_due';
 
 export interface Notification {
   id: string;
@@ -218,6 +222,38 @@ export interface Notification {
   body?: string;
   read_at?: string;
   created_at: string;
+}
+
+// ============================================================
+// Callback reminders (migration 906, SVBTL fork)
+// ============================================================
+
+export type ReminderStatus = 'pending' | 'notified' | 'done' | 'cancelled';
+
+export interface ContactReminder {
+  id: string;
+  account_id: string;
+  contact_id: string;
+  conversation_id?: string | null;
+  /** The agent who set it: owner, and the one notified. */
+  agent_id: string;
+  /** Why they are ringing back, in the agent's words. */
+  reason: string;
+  /** The absolute instant the callback is due. */
+  remind_at: string;
+  /** IANA zone the agent chose the time in, so it reads back the same. */
+  remind_at_tz: string;
+  notification_title: string;
+  status: ReminderStatus;
+  notified_at?: string | null;
+  completed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A reminder joined to the customer it is about, for list views. */
+export interface ContactReminderWithContact extends ContactReminder {
+  contact?: Pick<Contact, 'id' | 'name' | 'phone'> | null;
 }
 
 export type SenderType = 'customer' | 'agent' | 'bot';

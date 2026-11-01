@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
+import { useDueReminders } from "@/hooks/use-due-reminders";
 import {
   Bell,
+  BellRing,
   Bot,
   Crown,
   GitBranch,
@@ -93,6 +95,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
   { href: "/notifications", labelKey: "notifications", icon: Bell },
+  { href: "/follow-ups", labelKey: "callbacks", icon: BellRing },
   { href: "/contacts", labelKey: "contacts", icon: Users },
   { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },
   { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
@@ -119,6 +122,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
+  const { count: dueCallbacks } = useDueReminders();
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
   // (the 017 signup trigger seeds it from `full_name`), so showing it
@@ -223,6 +227,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               const showNotificationBadge =
                 item.href === "/notifications" && unreadNotifications > 0;
 
+              // Same reasoning as the notifications badge: a callback is
+              // still owed while you are looking at the list, so the count
+              // stays up until the work is marked done.
+              const showCallbackBadge =
+                item.href === "/follow-ups" && dueCallbacks > 0;
+
               return (
                 <li key={item.href}>
                   <Link
@@ -260,6 +270,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                         className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
                       >
                         {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                      </span>
+                    )}
+                    {showCallbackBadge && (
+                      <span
+                        aria-label={t("dueCallbacks", { count: dueCallbacks })}
+                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
+                      >
+                        {dueCallbacks > 9 ? "9+" : dueCallbacks}
                       </span>
                     )}
                   </Link>

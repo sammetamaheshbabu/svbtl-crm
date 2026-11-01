@@ -41,6 +41,8 @@ import {
   LayoutTemplate,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ContactCallbacks } from '@/components/contacts/contact-callbacks';
+import { useCan } from '@/hooks/use-can';
 import { contactHandle } from '@/lib/whatsapp/wa-identity';
 import { parseInternationalPhone } from '@/lib/whatsapp/phone-utils';
 
@@ -58,6 +60,9 @@ export function ContactDetailView({
   onUpdated,
 }: ContactDetailViewProps) {
   const t = useTranslations('Contacts.detailView');
+  const tCallbacks = useTranslations('Callbacks');
+  // Setting a callback is operational work, like sending — viewers read only.
+  const canEdit = useCan('send-messages');
   const supabase = createClient();
   const { accountId, defaultCurrency } = useAuth();
 
@@ -495,6 +500,12 @@ export function ContactDetailView({
                 >
                   {t('tabs.deals')}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="callbacks"
+                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                >
+                  {tCallbacks('heading')}
+                </TabsTrigger>
               </TabsList>
 
               {/* Details Tab */}
@@ -755,6 +766,16 @@ export function ContactDetailView({
                       </div>
                     ))}
                   </div>
+                )}
+              </TabsContent>
+
+              {/* Callbacks Tab — the same panel the chat screen shows */}
+              <TabsContent
+                value="callbacks"
+                className="flex-1 overflow-y-auto px-4 py-3"
+              >
+                {contactId && (
+                  <ContactCallbacks contactId={contactId} canEdit={canEdit} />
                 )}
               </TabsContent>
             </Tabs>

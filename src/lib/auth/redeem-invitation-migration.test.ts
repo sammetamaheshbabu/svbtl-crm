@@ -17,6 +17,10 @@ const tablesWithoutDomainData = new Set([
   // SVBTL fork (migration 901): every handoff row belongs to a conversation
   // (NOT NULL foreign key), and conversations are already checked.
   "conversation_assignments",
+  // SVBTL fork (migration 906): every callback reminder belongs to a
+  // contact (NOT NULL foreign key), and contacts are already checked —
+  // an account with no contacts cannot have a reminder.
+  "contact_reminders",
 ]);
 
 function accountScopedTables(): Set<string> {

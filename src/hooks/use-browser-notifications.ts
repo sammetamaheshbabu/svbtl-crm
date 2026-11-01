@@ -4,7 +4,8 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
-import type { Message } from "@/types";
+// Aliased: `Notification` is also the DOM constructor used below.
+import type { Message, Notification as NotificationRow } from "@/types";
 import {
   DEFAULT_NOTIFICATION_LABELS,
   buildNotificationContent,
@@ -145,6 +146,83 @@ export function useBrowserNotifications(): void {
 
     return () => {
       cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [enabled, router]);
+}
+
+/**
+ * Desktop notifications for callback reminders that have come due.
+ *
+ * Separate from the message listener above because the trigger is a
+ * different table: a reminder becomes due in the database (the pg_cron
+ * job in migration 906 writes the `notifications` row), not in response
+ * to anything happening in this tab. Watching `notifications` rather
+ * than `contact_reminders` means the alert and the in-app bell always
+ * agree, and keeps `contact_reminders` off the realtime publication.
+ *
+ * Title and body are already translated and stored on the row, so
+ * nothing is composed here.
+ *
+ * Same two gates as above — the device opt-in, re-checked permission —
+ * and the same limitation: a closed browser stays quiet.
+ */
+export function useReminderBrowserNotifications(): void {
+  const enabled = useBrowserNotifyPref();
+  const router = useRouter();
+
+  // Ids already alerted on, so a realtime replay after a reconnect does
+  // not alert twice. Bounded: reminders are low-volume by nature.
+  const seenRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (getNotificationPermission() === "unsupported") return;
+
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel("reminder-browser-notifications")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications" },
+        (payload) => {
+          if (getNotificationPermission() !== "granted") return;
+
+          const row = payload.new as NotificationRow;
+          if (row.type !== "reminder_due") return;
+          if (seenRef.current.has(row.id)) return;
+          seenRef.current.add(row.id);
+
+          try {
+            const notification = new Notification(row.title, {
+              body: row.body ?? undefined,
+              // One alert per reminder.
+              tag: row.id,
+              icon: "/icon",
+            });
+            notification.onclick = () => {
+              window.focus();
+              // Straight to the chat when the reminder came from one,
+              // otherwise to the list of what is owed.
+              router.push(
+                row.conversation_id
+                  ? conversationHref(row.conversation_id)
+                  : "/follow-ups",
+              );
+              notification.close();
+            };
+          } catch (err) {
+            console.error(
+              "[useReminderBrowserNotifications] failed to show:",
+              err,
+            );
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
       supabase.removeChannel(channel);
     };
   }, [enabled, router]);

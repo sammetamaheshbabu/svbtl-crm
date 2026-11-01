@@ -5,18 +5,26 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Notification } from "@/types";
-import { Bell, CheckCheck, HandHelping, Loader2, UserPlus } from "lucide-react";
+import {
+  Bell,
+  BellRing,
+  CheckCheck,
+  HandHelping,
+  Loader2,
+  UserPlus,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
-// Icon per notification type. Only one type exists today
-// (conversation_assigned) but this keeps future types a one-line add.
+// Icon per notification type. Keyed on the union, so a new type is a
+// compile error here until it gets an icon.
 const TYPE_ICON: Record<Notification["type"], typeof Bell> = {
   conversation_assigned: UserPlus,
   handover_requested: HandHelping,
+  reminder_due: BellRing,
 };
 
 export default function NotificationsPage() {

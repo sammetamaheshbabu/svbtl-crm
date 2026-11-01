@@ -41,7 +41,9 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Profile",
     "menuSettings": "Settings",
-    "menuSignOut": "Sign out"
+    "menuSignOut": "Sign out",
+    "callbacks": "Callbacks",
+    "dueCallbacks": "{count} callbacks due"
   },
   "Header": {
     "dashboard": "Dashboard",
@@ -2669,6 +2671,22 @@
       "noContactForConversation": "cannot resolve conversation: no contact",
       "noConversation": "cannot send: contact has no existing conversation",
       "tagAddedNoConversation": "tag_added automation cannot send: contact has no existing conversation"
+    },
+    "reminders": {
+      "invalidRemindAt": "The callback time is not a valid date",
+      "remindAtInPast": "Pick a time in the future",
+      "invalidContactId": "Contact id must be a UUID",
+      "invalidReminderId": "Callback id must be a UUID",
+      "invalidTimeZone": "Unknown time zone",
+      "reasonRequired": "Say what the callback is about",
+      "reasonTooLong": "Keep the reason under {max} characters",
+      "verifyFailed": "Could not verify the contact",
+      "contactNotFound": "Contact not found",
+      "reminderNotFound": "Callback not found",
+      "nothingToUpdate": "Nothing to update",
+      "createFailed": "Failed to save the callback: {message}",
+      "updateFailed": "Failed to update the callback: {message}",
+      "deleteFailed": "Failed to delete the callback: {message}"
     }
   },
   "Validation": {
@@ -3024,6 +3042,12 @@
     "handover": {
       "title": "Handover requested",
       "body": "{requester} asks you to hand over the chat with {contact}."
+    },
+    "reminders": {
+      "fieldsRequired": "reason, remind_at and remind_at_tz are required",
+      "invalidStatus": "status must be done or cancelled",
+      "notificationTitle": "Call {contact} back",
+      "unknownContact": "this customer"
     }
   },
   "MediaLibrary": {
@@ -3103,5 +3127,36 @@
       "what": "WhatsApp had a temporary problem sending this message.",
       "fix": "Try sending it again in a few minutes."
     }
+  },
+  "Callbacks": {
+    "heading": "Callbacks",
+    "none": "No callbacks",
+    "add": "Add callback",
+    "reasonLabel": "What is it about?",
+    "reasonPlaceholder": "Wants pricing for the wedding package",
+    "whenLabel": "When",
+    "orExact": "Or pick a date and time",
+    "save": "Add",
+    "cancel": "Cancel",
+    "saved": "Callback set",
+    "saveFailed": "Couldn't set the callback",
+    "done": "Done",
+    "doneSaved": "Callback marked done",
+    "doneFailed": "Couldn't mark it done",
+    "overdue": "Overdue",
+    "dueAt": "Due {time}",
+    "loadFailed": "Couldn't load the callbacks",
+    "presetThisEvening": "This evening, 5:30 pm",
+    "presetTomorrowMorning": "Tomorrow, 10 am",
+    "presetInThreeDays": "In 3 days",
+    "presetNextWeek": "Next week",
+    "pageTitle": "Callbacks",
+    "pageSubtitle": "Customers you promised to ring back",
+    "groupOverdue": "Overdue",
+    "groupToday": "Today",
+    "groupUpcoming": "Upcoming",
+    "pageEmpty": "Nothing to call back. Set a callback from a customer's profile in the inbox.",
+    "openChat": "Open chat",
+    "withContact": "with {contact}"
   }
 }

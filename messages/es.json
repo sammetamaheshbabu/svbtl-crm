@@ -41,7 +41,9 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Perfil",
     "menuSettings": "Configuración",
-    "menuSignOut": "Cerrar sesión"
+    "menuSignOut": "Cerrar sesión",
+    "callbacks": "Llamadas",
+    "dueCallbacks": "{count} llamadas pendientes"
   },
   "Header": {
     "dashboard": "Panel",
@@ -2669,6 +2671,22 @@
       "noContactForConversation": "no se pudo resolver la conversación: sin contacto",
       "noConversation": "no se puede enviar: el contacto no tiene una conversación existente",
       "tagAddedNoConversation": "la automatización tag_added no puede enviar: el contacto no tiene una conversación existente"
+    },
+    "reminders": {
+      "invalidRemindAt": "La hora de la llamada no es una fecha válida",
+      "remindAtInPast": "Elige una hora futura",
+      "invalidContactId": "El id del contacto debe ser un UUID",
+      "invalidReminderId": "El id de la llamada debe ser un UUID",
+      "invalidTimeZone": "Zona horaria desconocida",
+      "reasonRequired": "Indica de qué trata la llamada",
+      "reasonTooLong": "Limita el motivo a {max} caracteres",
+      "verifyFailed": "No se pudo verificar el contacto",
+      "contactNotFound": "Contacto no encontrado",
+      "reminderNotFound": "Llamada no encontrada",
+      "nothingToUpdate": "Nada que actualizar",
+      "createFailed": "No se pudo guardar la llamada: {message}",
+      "updateFailed": "No se pudo actualizar la llamada: {message}",
+      "deleteFailed": "No se pudo eliminar la llamada: {message}"
     }
   },
   "Validation": {
@@ -3024,6 +3042,12 @@
     "handover": {
       "title": "Solicitud de transferencia",
       "body": "{requester} te pide transferir el chat con {contact}."
+    },
+    "reminders": {
+      "fieldsRequired": "reason, remind_at y remind_at_tz son obligatorios",
+      "invalidStatus": "status debe ser done o cancelled",
+      "notificationTitle": "Devuelve la llamada a {contact}",
+      "unknownContact": "este cliente"
     }
   },
   "MediaLibrary": {
@@ -3103,5 +3127,36 @@
       "what": "WhatsApp tuvo un problema temporal al enviar este mensaje.",
       "fix": "Vuelve a enviarlo en unos minutos."
     }
+  },
+  "Callbacks": {
+    "heading": "Llamadas",
+    "none": "Sin llamadas",
+    "add": "Añadir llamada",
+    "reasonLabel": "¿De qué trata?",
+    "reasonPlaceholder": "Quiere precios del paquete de boda",
+    "whenLabel": "Cuándo",
+    "orExact": "O elige una fecha y una hora",
+    "save": "Añadir",
+    "cancel": "Cancelar",
+    "saved": "Llamada programada",
+    "saveFailed": "No se pudo programar la llamada",
+    "done": "Hecho",
+    "doneSaved": "Llamada marcada como hecha",
+    "doneFailed": "No se pudo marcar como hecha",
+    "overdue": "Vencida",
+    "dueAt": "Para {time}",
+    "loadFailed": "No se pudieron cargar las llamadas",
+    "presetThisEvening": "Esta tarde, 17:30",
+    "presetTomorrowMorning": "Mañana, 10:00",
+    "presetInThreeDays": "En 3 días",
+    "presetNextWeek": "La próxima semana",
+    "pageTitle": "Llamadas",
+    "pageSubtitle": "Clientes a los que prometiste devolver la llamada",
+    "groupOverdue": "Vencidas",
+    "groupToday": "Hoy",
+    "groupUpcoming": "Próximas",
+    "pageEmpty": "Nada que devolver. Programa una llamada desde el perfil de un cliente en la bandeja.",
+    "openChat": "Abrir chat",
+    "withContact": "con {contact}"
   }
 }
