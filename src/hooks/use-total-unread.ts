@@ -11,6 +11,11 @@ import type { Conversation } from "@/types";
  *
  * Lives on its own realtime channel (distinct from the inbox page's
  * "inbox-realtime") so both can coexist without sharing state.
+ *
+ * The topic is fixed, so call this from ONE mounted component at a time
+ * (today: the sidebar, which the dashboard shell mounts once). A second
+ * live caller would be handed the same channel object and throw from
+ * `.on()` — give the topic a per-instance suffix then. CUSTOMIZATIONS.md §V.
  */
 export function useTotalUnread(): number {
   const [total, setTotal] = useState(0);

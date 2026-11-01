@@ -28,7 +28,7 @@ records **every change we made on top of upstream, how it works and why**, so th
 
 - [At a glance](#at-a-glance)
 - [Who can do what](#who-can-do-what)
-- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–S
+- [1. Code customizations](#1-code-customizations-tracked-in-git) — sections A–V
 - [2. Database migrations](#2-database-migrations)
 - [3. Public API changes (for the mobile app)](#3-public-api-changes-for-the-mobile-app)
 - [4. Deployment configuration](#4-deployment-configuration-not-in-git--recreate-per-deployment)
@@ -61,6 +61,8 @@ records **every change we made on top of upstream, how it works and why**, so th
 | P | Media Library | Pick already-uploaded files instead of uploading again | 2026-10-24 | — | Low–Medium |
 | Q | Agent restrictions | Broadcasts / automations / flows read-only; scoped contacts; New chat warns + "Ask to hand over" | pending | 904 | Medium–High |
 | T | Callback reminders | "Callbacks" on a customer and in the sidebar; alert when one falls due | pending | 906 | Low |
+| U | Error boundaries and 404 | A broken screen shows "Something went wrong" + Try again; a bad URL gets a real page | pending | — | Low |
+| V | Realtime topic audit | — (no behaviour change; comments + this note) | pending | — | Low |
 
 ## Who can do what
 
@@ -790,6 +792,134 @@ prints a notice, reminders are recorded and listed correctly, and nothing ever f
 `SELECT * FROM cron.job WHERE jobname = 'notify-due-reminders';`.
 
 ---
+
+### U. Error boundaries and the 404 page
+**Branch:** `error-boundaries`
+**Files:** `src/components/layout/status-screen.tsx` (new, the shared block),
+`src/components/layout/error-fallback.tsx` (new), `src/app/(dashboard)/error.tsx` (new),
+`src/app/error.tsx` (new), `src/app/not-found.tsx` (new),
+`messages/*.json` (`ErrorBoundary.*`, `NotFound.*`).
+
+**What staff see**
+- When a screen breaks, the page area shows **"Something went wrong"**, one plain line of what to
+  do and a **Try again** button — instead of a blank white page. On a dashboard screen there is a
+  **Back to dashboard** link beside it; the root boundary hides that link, because every path it
+  covers makes it a dead end (a signed-out visitor is bounced back to `/login`, and if the shell
+  itself threw, `/dashboard` only remounts it).
+- On a dashboard screen the sidebar, header and nav stay where they are, so the failure costs them
+  one page, not the session. **Try again** re-renders the page; if it was a hiccup (a dropped
+  query, a realtime race) they carry on from where they were.
+- No error text and no stack: Meta-style gibberish means nothing to a telecaller and a message can
+  carry data. The error goes to the browser console instead, and the `digest` Next attaches to
+  *server* errors is shown as a short **Reference** they can read out on a support call.
+- A URL that matches no route gets the same treatment in a calmer key — a compass rather than a
+  warning triangle, and **Back to dashboard** without a **Try again** — instead of Next's bare
+  built-in 404, which is untranslated and offers no way back.
+
+**How it works**
+- `src/app/(dashboard)/error.tsx` is a sibling of `(dashboard)/layout.tsx`, so React mounts it
+  *inside* `DashboardShell` — the chrome survives. `src/app/error.tsx` is the catch-all for
+  everything else (the auth pages, `/join`, and the shell itself if that is what throws); it sits
+  under the root layout, so the theme boot script and `NextIntlClientProvider` are both still in
+  place and its strings translate like any other.
+- Both are three lines around one shared `ErrorFallback`, so the two cannot drift apart — the same
+  reasoning as the callbacks panel in §T. `ErrorFallback` and `not-found.tsx` in turn share
+  `StatusScreen`, which owns the centred icon / title / description / actions block; `tone` is the
+  only thing that differs, because a mistyped URL is not an error and shouldn't shout like one.
+- `src/app/not-found.tsx` covers every unmatched URL. It keeps **Back to dashboard** — unlike the
+  root error boundary — because the app is working and the address simply isn't part of it, so the
+  link is a real way out rather than a loop. A signed-out visitor is forwarded to `/login` from
+  there by middleware, which is the right answer too.
+- Logging is a `useEffect` keyed on `error`, not a render-time `console.error`, so re-rendering the
+  fallback does not re-log and render stays side-effect free. (React still double-invokes it in
+  dev, so expect two lines there and one in production.)
+
+**No `global-error.tsx`.** It replaces the root layout, which is where `NextIntlClientProvider` is
+mounted, so every string in it would have to be hard-coded English — against the four-language rule
+above — or it would have to bundle a 155 KB message catalogue into every page's JS. It would only
+ever fire if `src/app/layout.tsx` itself threw, which is a server component doing `getLocale()` /
+`getMessages()` and nothing else. Not worth either price; Next's built-in fallback covers that case.
+
+**Why:** the app is `"use client"` throughout — dashboard pages query Supabase and subscribe to
+realtime in their own hooks — and until now there was no `error.tsx` at any level. One unhandled
+throw anywhere in the tree (as in the contact-sidebar realtime clash fixed on 2026-11-01) unmounted
+the whole document and left agents staring at white, mid-conversation, with no way back but a
+reload. This is the floor under that.
+
+**Tests:** covered by the existing `messages.test.ts` parity checks (the new `ErrorBoundary.*` keys
+and their `{digest}` placeholder in all four languages). The boundary itself was verified by hand:
+against a page made to throw, the dashboard boundary renders the fallback and **Try again**
+recovers the page, the root boundary catches a throw outside the dashboard, and the error reaches
+the console. (The dashboard check ran with the shell's auth gate bypassed, so the chrome around it
+was not part of that run.)
+
+**Upstream-merge risk:** *Low.* Three new files and no edit to an upstream one. Upstream adding its
+own `error.tsx` would conflict on the path only.
+
+---
+
+### V. Realtime channel topics: who may share one
+**Branch:** `realtime-channel-audit`
+**Files:** comment-only edits to `src/components/inbox/contact-sidebar.tsx`,
+`src/hooks/use-realtime.ts`, `src/hooks/use-presence.ts`, `src/hooks/use-total-unread.ts`,
+`src/hooks/use-unread-notifications.ts`, `src/hooks/use-due-reminders.ts`.
+**No behaviour change.**
+
+**Why this exists**
+
+§N's fix (`4aa56e2`) stopped the inbox crashing when a phone tapped the customer's name: below
+`xl` the chat header opens the contact sheet while the desktop panel copy of `ContactSidebar` is
+still mounted (hidden by CSS alone), so two components subscribed to `contact-tags:<id>` at once.
+That looked like it could be one instance of a general problem, so every `.channel()` topic in the
+fork was audited. **It was not** — nothing else in the app can hit it today. This section records
+the rule and the evidence so the next person does not have to re-derive either.
+
+**The rule**
+
+`supabase.channel(topic)` is *not* a constructor. `RealtimeClient.channel()` returns the
+**existing** channel object whenever one with that topic is still registered, and
+`RealtimeChannel.on()` throws `cannot add postgres_changes callbacks for … after subscribe()` when
+the channel it is handed is already `joining` or `joined`. So:
+
+> **Two components subscribed to one topic at the same time = a crash.** One at a time is fine.
+
+Only *concurrent* subscribers matter. `removeChannel()` is declared `async`, but the teardown it
+matters for is synchronous: `unsubscribe()` → phoenix `leave()` sets the state to `leaving`, which
+makes `canPush()` false, which acks the leave locally there and then — the channel reaches `closed`
+and is deregistered before `removeChannel()` has even awaited. Verified against the installed
+`@supabase/realtime-js@2.118.0`: after a synchronous `unsubscribe()`, asking for the same topic
+returns a **different** object, and subscribing on it reaches `joining`. So an unmount→remount —
+a route change, an effect re-running on a changed dependency, React StrictMode's dev double-invoke
+— was never the failure mode, and a per-instance suffix is not needed to survive one. (The §N
+comment claimed otherwise; corrected here.)
+
+**The audit**
+
+| Topic | Where | Verdict |
+|---|---|---|
+| `contact-tags:<id>:<instanceId>` | `inbox/contact-sidebar.tsx` | **Collided.** Fixed in §N — two `<ContactSidebar>` in `inbox/page.tsx` (the `xl:block` panel, line 733, and the `<Sheet>` copy, line 753) are mounted together below `xl`. The only one. |
+| `notifications-page` | `(dashboard)/notifications/page.tsx` | Safe. A route page component; one per route. |
+| `reactions:<conversationId>` | `inbox/message-thread.tsx` | Safe. One `<MessageThread>` in the tree (`inbox/page.tsx:706` — mobile and desktop share it, the wrapper `div` just hides it), and the topic carries the conversation anyway. |
+| `browser-notifications`, `reminder-browser-notifications` | `use-browser-notifications.ts` | Safe. Both hooks are called only by `<BrowserNotificationsListener>`, mounted once in `dashboard-shell.tsx:53`. Its doc comment already said "Mount ONCE". |
+| `total-unread-realtime`, `notifications-unread-count`, `due-reminders-count` | `use-total-unread.ts`, `use-unread-notifications.ts`, `use-due-reminders.ts` | Safe. All three are called from `<Sidebar>` (`sidebar.tsx:123–125`), mounted once in `dashboard-shell.tsx:54`. The sidebar renders a single `<aside>` that is responsive by CSS, not a mobile copy plus a desktop copy — the trap §N fell into. |
+| `presence:<accountId>` | `use-presence.ts` | Safe, narrowly. Two consumers — `message-thread.tsx:204` and `settings/members-tab.tsx:131` — but on different routes, and the App Router commits a navigation in one pass, so the old tree's cleanups run before the new tree's effects. Never both live. |
+| `inbox-realtime`, `dashboard-overview` | `use-realtime.ts` callers | Safe. Two distinct literals, one per page, neither page mounted twice. |
+
+**What changed**
+
+Nothing that runs. The topics that are safe are safe because of a caller-side invariant ("only one
+mounted caller") that nothing enforces and that five of them did not state — exactly the shape of
+assumption §N broke. Each now says so in its doc comment, pointing here.
+
+`usePresence` gets a different note on purpose. It is the one hook written to be shared (its
+`enabled` flag exists so "a consumer" can opt out), and its two callers want the *same*
+account-wide map. So if a third consumer ever needs to be live alongside one of them, the answer
+is to lift the map into a provider the shell mounts once — **not** a per-instance topic suffix,
+which would open N websocket channels for one account's presence. The suffix is right for
+`ContactSidebar`, where the two copies genuinely watch one contact each and the duplication is a
+responsive-layout artefact.
+
+**Upstream-merge risk:** *Low.* Comments only, inside blocks the fork already rewrote.
 
 ---
 

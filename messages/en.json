@@ -3158,5 +3158,17 @@
     "pageEmpty": "Nothing to call back. Set a callback from a customer's profile in the inbox.",
     "openChat": "Open chat",
     "withContact": "with {contact}"
+  },
+  "ErrorBoundary": {
+    "title": "Something went wrong",
+    "description": "This part of the app stopped responding. Try again — if it keeps happening, tell your admin.",
+    "tryAgain": "Try again",
+    "backToDashboard": "Back to dashboard",
+    "reference": "Reference: {digest}"
+  },
+  "NotFound": {
+    "title": "This page doesn't exist",
+    "description": "The address you opened isn't part of the CRM. It may have changed, or the link may have a typo.",
+    "backToDashboard": "Back to dashboard"
   }
 }

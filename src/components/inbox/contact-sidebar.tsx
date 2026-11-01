@@ -166,9 +166,10 @@ export function ContactSidebar({
   // mounted (hidden by CSS alone), so two sidebars watch the same contact at
   // once. supabase.channel() hands back the *existing* channel for a repeated
   // topic, and .on() on an already-subscribed channel throws — which crashed
-  // the inbox when a phone tapped the customer's name. A per-instance topic
-  // also survives the mount→unmount→remount of StrictMode, since
-  // removeChannel() only finishes unregistering the old topic asynchronously.
+  // the inbox when a phone tapped the customer's name. Two *live* subscribers
+  // is the whole of it: removeChannel() tears a channel down and deregisters
+  // it synchronously, so a plain unmount→remount (a route change, StrictMode's
+  // double-invoke) was never the problem — see CUSTOMIZATIONS.md §V.
   useEffect(() => {
     if (!contactId) return;
     const supabase = createClient();

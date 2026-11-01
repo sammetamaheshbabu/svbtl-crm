@@ -3158,5 +3158,17 @@
     "pageEmpty": "Nada que devolver. Programa una llamada desde el perfil de un cliente en la bandeja.",
     "openChat": "Abrir chat",
     "withContact": "con {contact}"
+  },
+  "ErrorBoundary": {
+    "title": "Algo salió mal",
+    "description": "Esta parte de la app dejó de responder. Vuelve a intentarlo; si sigue ocurriendo, avisa a tu administrador.",
+    "tryAgain": "Intentar de nuevo",
+    "backToDashboard": "Volver al panel",
+    "reference": "Referencia: {digest}"
+  },
+  "NotFound": {
+    "title": "Esta página no existe",
+    "description": "La dirección que abriste no es parte de la app. Puede que haya cambiado o que el enlace tenga un error.",
+    "backToDashboard": "Volver al panel"
   }
 }

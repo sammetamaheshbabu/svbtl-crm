@@ -3158,5 +3158,17 @@
     "pageEmpty": "Nada para retornar. Agende um retorno pelo perfil do cliente na caixa de entrada.",
     "openChat": "Abrir conversa",
     "withContact": "com {contact}"
+  },
+  "ErrorBoundary": {
+    "title": "Algo deu errado",
+    "description": "Esta parte do app parou de responder. Tente novamente; se o problema continuar, avise seu administrador.",
+    "tryAgain": "Tentar novamente",
+    "backToDashboard": "Voltar ao painel",
+    "reference": "Referência: {digest}"
+  },
+  "NotFound": {
+    "title": "Esta página não existe",
+    "description": "O endereço que você abriu não faz parte do app. Ele pode ter mudado ou o link pode estar errado.",
+    "backToDashboard": "Voltar ao painel"
   }
 }
