@@ -10,7 +10,8 @@ import type { Notification } from "@/types";
  *
  * RLS on `notifications` already scopes every read to `auth.uid() =
  * user_id`, so no explicit filter is needed here — same pattern as
- * `useTotalUnread` for conversations.
+ * `useTotalUnread` for conversations, including its fixed-topic caveat:
+ * ONE mounted caller at a time. CUSTOMIZATIONS.md §V.
  */
 export function useUnreadNotifications(): number {
   const [count, setCount] = useState(0);
